@@ -55,6 +55,14 @@ resources:
     product_version: ((stemcell_metrics_version))
     sort_by: semver
 
+- name: stemcell-ubuntu-xenial
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: stemcells-ubuntu-xenial
+    product_version: ((stemcell_xenial_version))
+    sort_by: semver
+
 - name: redis-image
   type: pivnet
   source:
