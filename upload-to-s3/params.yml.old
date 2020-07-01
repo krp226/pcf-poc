@@ -1,6 +1,6 @@
 ---
 pivnet_token: ((pivnet_token))
-platform_automation_version: 4.4.3
+platform_automation_version: 3.0.1
 opsman_version: 2\.7\.6
 git_private_key: ((git_keys.private_key))
 git_uri: "git@github.com:kartikeyavadlapatla/pcf-poc.git"
@@ -24,6 +24,6 @@ rabbitmq_version: 1\.17\.4
 spring-cloud-services_version: 3\.1\.3
 single-sign-on_version: 1\.11\.0
 storage-backup-bucket: "tile-storage-bucket" 
-storage-endpoint: "s3.us-east-1.amazonaws.com"
+storage-endpoint: "s3-us-east-1.amazonaws.com"
 storage-access-key-id: ((s3-storage-access-key-id))
 storage-secret-access-key: ((s3-storage-secret-access-key))

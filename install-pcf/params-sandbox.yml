@@ -1,0 +1,24 @@
+---
+pivnet_token: ((pivnet_token))
+platform_automation_version: 3.0.14
+git_private_key: ((git_keys.private_key))
+git_uri: "git@github.com:kartikeyavadlapatla/pcf-poc.git"
+git_branch: "master"
+git_template_uri: "git@github.com:kartikeyavadlapatla/pcf-templates.git"
+git_template_branch: "master"
+foundation: "sandbox"
+credhub_ca_cert: ((credhub_ca_cert.certificate))
+credhub_client: "credhub_admin"
+credhub_secret: ((credhub_secret))
+credhub_server: ((credhub_server))
+access-key-id: ((sandbox-access-key-id))
+secret-access-key: ((sandbox-secret-access-key))
+aws-region: "us-east-1"
+opsman-subnet-id: "subnet-014227580f6a21566"
+opsman-image-id: "ami-043f4307b46c18f2e"
+opsman-instance-type: "t3.medium"
+opsman-ssh-key-name: "pcf-opsman-key-terra"
+opsman-security-group-id: "sg-00aeddfd8354ce3de"
+opsman-iam-instance-profile: "ec2user"
+opsman-root-VolumeSize: "150"
+opsman-private-ip: "10.65.16.10"
