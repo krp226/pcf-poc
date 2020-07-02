@@ -95,6 +95,8 @@ jobs:
         opsman_root_VolumeSize: ((opsman-root-VolumeSize))
         opsman_private_ip: ((opsman-private-ip))
         aws_region: ((aws-region))
+        foundation: ((foundation))
+        STATE_FILE: ((foundation))/state/state.yml
       run:
         path: bash
         args:
@@ -117,4 +119,35 @@ jobs:
           --iam-instance-profile "Name"="${opsman_iam_instance_profile}" \
           --private-ip-address ${opsman_private_ip} \
           --count 1  \
-          --block-device-mappings "DeviceName="/dev/xvda","Ebs"={"VolumeSize"="${opsman_root_VolumeSize}","Encrypted"="true"}"
+          --block-device-mappings "DeviceName="/dev/xvda","Ebs"={"VolumeSize"="${opsman_root_VolumeSize}","Encrypted"="true"}" \
+          --tag-specifications "ResourceType="instance","Tags"=[{"Key"="Name","Value"="Opsman_${foundation}"}]"
+    ensure: &make-state-commit
+      do:
+        - task: make-commit
+          image: pcf-automation-image
+          input_mapping:
+            configuration: pcf-automation-git
+          config:
+            platform: linux
+            inputs:
+              - name: generated-state
+              - name: configuration
+            outputs:
+              - name: configuration-commit
+            run:
+              path: bash
+              args:
+                - -c
+                - |
+                  set -eu
+                  git clone -b ((git_branch)) configuration configuration-commit
+                  cp generated-state/state.yml configuration-commit/state/((foundation))/state.yml
+                  cd configuration-commit
+                  git add -A
+                  git config --global user.email "bot@example.com"
+                  git config --global user.name "Friendly Neighborhood Bot"
+                  git commit -m 'updated the state file' || true
+        - put: pcf-automation-git
+          params:
+            repository: configuration-commit
+            rebase: true
