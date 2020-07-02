@@ -1,6 +1,6 @@
 ---
 pivnet_token: ((pivnet_token))
-platform_automation_version: 3.0.14
+platform_automation_version: 4.4.3
 git_private_key: ((git_keys.private_key))
 git_uri: "git@github.com:kartikeyavadlapatla/pcf-poc.git"
 git_branch: "master"
@@ -22,3 +22,6 @@ opsman-security-group-id: "sg-00aeddfd8354ce3de"
 opsman-iam-instance-profile: "ec2user"
 opsman-root-VolumeSize: "150"
 opsman-private-ip: "10.65.16.10"
+pivnet-file-glob: "ops-manager-aws*.yml"
+pivnet-product-slug: ops-manager
+product-version-regex: ^2\.5\.\d+$

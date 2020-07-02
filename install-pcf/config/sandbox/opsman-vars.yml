@@ -1,0 +1,16 @@
+---
+opsman-configuration:
+  aws:
+    region: us-east-1
+    vm_name: ops-manager-sandbox
+    vpc_subnet_id: "subnet-014227580f6a21566"
+    security_group_id: "sg-00aeddfd8354ce3de"
+    key_pair_name: "pcf-opsman-key-terra"
+    private_ip: "10.65.16.10"
+    use_instance_profile: true
+    iam_instance_profile_name: pcf-master-user
+
+# Note that because this config contains no secrets
+# and is already written to a foundation-specific filepath,
+# it need not be interpolated.
+
