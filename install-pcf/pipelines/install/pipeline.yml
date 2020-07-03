@@ -159,7 +159,7 @@ jobs:
       vars: vars
   - task: create-vm
     image: pcf-automation-image
-    file: pcf-automation-git/install-pcf/templates/create-vm.yml
+    file: platform-automation-tasks/install-pcf/templates/create-vm.yml
     params:
       OPSMAN_CONFIG_FILE: install-pcf/config/sandbox/opsman-vars.yml
       AWS_ACCESS_KEY_ID: ((access-key-id))
