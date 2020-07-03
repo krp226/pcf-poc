@@ -161,11 +161,15 @@ jobs:
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/create-vm.yml
     params:
-      CONFIG_FILE: install-pcf/config/sandbox/opsman-var.yml 
+      OPSMAN_CONFIG_FILE: install-pcf/config/sandbox/opsman-vars.yml
+      AWS_ACCESS_KEY_ID: ((access-key-id))
+      AWS_SECRET_ACCESS_KEY: ((secret-access-key))
+      AWS_DEFAULT_REGION: ((aws-region))
     input_mapping:
       config: pcf-automation-git
       state: pcf-automation-git
       image: downloaded-product
+      platform-automation-tasks: pcf-automation-tasks
     ensure: &make-state-commit
       do:
         - task: make-commit
