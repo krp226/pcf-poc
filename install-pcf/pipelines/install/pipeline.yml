@@ -122,14 +122,41 @@ jobs:
 #          --count 0  \
 #          --block-device-mappings "DeviceName="/dev/xvda","Ebs"={"VolumeSize"="${opsman_root_VolumeSize}","Encrypted"="true"}" \
 #          --tag-specifications "ResourceType="instance","Tags"=[{"Key"="Name","Value"="Opsman_${foundation}"}]"
+  - task: creating-opsman-var
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      outputs:
+      - name: vars
+      params:
+        pivnet_file_glob: ((pivnet-file-glob))
+        product_version_regex: ((product-version-regex))
+        pivnet_api_token: ((pivnet_token))
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "---" > var.yml
+          echo "pivnet-file-glob: ${pivnet_file_glob}" >> var.yml
+          echo "product-version-regex: ${product_version_regex}" >> var.yml
+          echo "pivnet-api-token: ${pivnet_api_token}" >> var.yml
+          cat var.yml
+          cp var.yml vars/vars.yml
   - task: download-product        
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/download-product.yml
     params:
       CONFIG_FILE: install-pcf/config/((foundation))/download-ops-manager.yml
+      VARS_FILES: vars/vars.yml
     input_mapping:
       config: pcf-automation-git 
       platform-automation-tasks: pcf-automation-tasks
+      vars: vars
   - task: create-vm
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/create-vm.yml
