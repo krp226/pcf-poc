@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin
 # code_snippet create-vm-script start bash
 
 cat /var/version && echo ""
