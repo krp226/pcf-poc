@@ -7,9 +7,8 @@ opsman-configuration:
     security_group_id: "sg-00aeddfd8354ce3de"
     key_pair_name: "pcf-opsman-key-terra"
     private_ip: "10.65.16.10"
-    use_instance_profile: true
-    iam_instance_profile_name: pcf-master-user
-
+    access_key_id: ((access_key_id))
+    secret_access_key: ((secret_access_key))
 # Note that because this config contains no secrets
 # and is already written to a foundation-specific filepath,
 # it need not be interpolated.
