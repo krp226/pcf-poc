@@ -49,5 +49,5 @@ params:
   #     (such as state-*.yml)
 
 run:
-  path: platform-automation-tasks/tasks/create-vm.sh
+  path: create-vm.sh
 # code_snippet create-vm end
