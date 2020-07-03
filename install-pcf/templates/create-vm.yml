@@ -8,7 +8,7 @@
 platform: linux
 
 inputs:
-- name: platform-automation-tasks
+- name: pcf-automation-git
 - name: state # contains the state for the vm
 - name: config # contains the product configuration file
 - name: image # contains the image file to be installed
@@ -49,5 +49,5 @@ params:
   #     (such as state-*.yml)
 
 run:
-  path: install-pcf/templates/create-vm.sh
+  path: pcf-automation-git/install-pcf/templates/create-vm.sh
 # code_snippet create-vm end
