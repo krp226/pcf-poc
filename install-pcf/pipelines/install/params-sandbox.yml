@@ -25,3 +25,7 @@ opsman-private-ip: "10.65.16.10"
 pivnet-file-glob: "ops-manager-aws*.yml"
 pivnet-product-slug: ops-manager
 product-version-regex: ^2\.5\.\d+$
+opsman-target: 10.65.16.10
+opsman-username: ((opsman-username))
+opsman-password: ((opsman-password))
+opsman-decryption-passphrase: ((opsman-decryption-passphrase)) 

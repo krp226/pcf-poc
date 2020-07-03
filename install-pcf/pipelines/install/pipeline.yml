@@ -74,7 +74,7 @@ jobs:
       CREDHUB_CLIENT: ((credhub_client))
       CREDHUB_SECRET: ((credhub_secret))
       CREDHUB_SERVER: ((credhub_server))
-      PREFIX: /((foundation))
+      PREFIX: /concourse/((foundation))
 #  - task: put-opsman-froms3
 #    config:
 #      platform: linux
@@ -130,7 +130,7 @@ jobs:
         source:
           repository: ubuntu
       outputs:
-      - name: vars
+      - name: opsvars
       params:
         pivnet_file_glob: ((pivnet-file-glob))
         product_version_regex: ((product-version-regex))
@@ -146,7 +146,7 @@ jobs:
           echo "product-version-regex: ${product_version_regex}" >> var.yml
           echo "pivnet-api-token: ${pivnet_api_token}" >> var.yml
           cat var.yml
-          cp var.yml vars/vars.yml
+          cp var.yml opsvars/vars.yml
   - task: download-product        
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/download-product.yml
@@ -156,20 +156,19 @@ jobs:
     input_mapping:
       config: pcf-automation-git 
       platform-automation-tasks: pcf-automation-tasks
-      vars: vars
+      vars: opsvars
   - task: create-vm
     image: pcf-automation-image
-    file: platform-automation-tasks/install-pcf/templates/create-vm.yml
+    file: pcf-automation-tasks/tasks/create-vm.yml
     params:
       OPSMAN_CONFIG_FILE: install-pcf/config/sandbox/opsman-vars.yml
-      AWS_ACCESS_KEY_ID: ((access-key-id))
-      AWS_SECRET_ACCESS_KEY: ((secret-access-key))
-      AWS_DEFAULT_REGION: ((aws-region))
+      VARS_FILES: vars/creds.yml
     input_mapping:
       config: pcf-automation-git
       state: pcf-automation-git
       image: downloaded-product
-      platform-automation-tasks: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+      vars: vars
     ensure: &make-state-commit
       do:
         - task: make-commit
@@ -190,7 +189,7 @@ jobs:
                 - |
                   set -eu
                   git clone -b ((git_branch)) configuration configuration-commit
-                  cp generated-state/state.yml configuration-commit/state/((foundation))/state.yml
+                  cp generated-state/state.yml configuration-commit/install-pcf/state/((foundation))/state.yml
                   cd configuration-commit
                   git add -A
                   git config --global user.email "bot@example.com"
@@ -200,3 +199,45 @@ jobs:
           params:
             repository: configuration-commit
             rebase: true
+  - task: create-auth-file
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      params:
+        OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+        USERNAME: ((opsman-username))
+        PASSWORD: ((opsman-password))
+      outputs:
+        - name: config
+      run:
+        path: sh
+        args:
+        - -exc
+        - |
+          touch config/auth.yml
+          cat > config/auth.yml <<EOL
+          ---
+          username: $USERNAME
+          password: $PASSWORD
+          decryption-passphrase: $OPSMAN_DECRYPTION_PASSPHRASE
+          EOL
+  - task: create-env-file
+    file: pipeline-utilities/tasks/create-env-file.yml
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+  - task: configure-authentication
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/configure-authentication.yml
+    attempts: 20
+    input_mapping:
+      platform-automation-tasks: pcf-automation-tasks
+
