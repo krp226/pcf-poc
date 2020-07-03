@@ -49,5 +49,5 @@ params:
   #     (such as state-*.yml)
 
 run:
-  path: pcf-automation-git/install-pcf/templates/create-vm.sh
+  path: install-pcf/templates/create-vm.sh
 # code_snippet create-vm end
