@@ -129,12 +129,13 @@ jobs:
         type: docker-image
         source:
           repository: ubuntu
-      outputs:
+       outputs:
       - name: vars
       params:
-        pivnet_file_glob: ((pivnet-file-glob))
-        product_version_regex: ((product-version-regex))
-        pivnet_api_token: ((pivnet_token))
+        access_key_id: ((access-key-id))
+        secret_access_key: ((secret-access-key))
+        opsman_subnet_id: ((opsman-subnet-id))
+        opsman_image_id: ((opsman-image-id))
       run:
         path: bash
         args:
@@ -143,27 +144,21 @@ jobs:
           set -eux
           echo "---" > var.yml
           echo "pivnet-file-glob: ${pivnet_file_glob}" >> var.yml
-          echo "product-version-regex: ${product_version_regex}" >> var.yml
-          echo "pivnet-api-token: ${pivnet_api_token}" >> var.yml
-          cat var.yml
-          cp var.yml vars/vars.yml
+          echo "product-version-regex: ${pivnet_file_glob}" >> var.yml
   - task: download-product        
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/download-product.yml
     params:
-      CONFIG_FILE: install-pcf/templates/download-ops-manager.yml
-      VARS_FILES: vars/vars.yml
+      CONFIG_FILE: install-pcf/config/((foundation))/download-ops-manager.yml
+      vars: vars
     input_mapping:
       config: pcf-automation-git 
       platform-automation-tasks: pcf-automation-tasks
-      vars: vars
   - task: create-vm
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/create-vm.yml
-    params:
-      CONFIG_FILE: install-pcf/config/sandbox/opsman-var.yml 
     input_mapping:
-      config: pcf-automation-git
+      config: interpolated-config
       state: pcf-automation-git
       image: downloaded-product
     ensure: &make-state-commit
