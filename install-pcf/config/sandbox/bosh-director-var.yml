@@ -8,7 +8,7 @@ bosh-secret-access_key: ((secret-access-key))
 bosh-vms-ssh-key-name: pcf-opsman-key-terra
 default-region: us-east-1
 bosh-vm-security-group: sg-0b91a42ebf9fe6cf5
-ssh_private_key: ((ssh_private_key))
+ssh_private_key: ((bosh-ssh-key))
 singleton-network-name: pcf-infra
 singleton-az: us-east-1a
 az1: us-east-1a

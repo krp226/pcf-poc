@@ -312,7 +312,7 @@ jobs:
     params:
       VARS_FILES: |
         vars/creds.yml
-        install-pcf/config/((foundation))/bosh-director-vars.yml
+        config/install-pcf/config/((foundation))/bosh-director-var.yml
       DIRECTOR_CONFIG_FILE: install-pcf/templates/bosh-director.yml
   - task: logout-of-opsmanger
     image: pcf-automation-image
