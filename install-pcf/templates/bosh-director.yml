@@ -144,6 +144,8 @@ properties-configuration:
       bucket_name: ((director-s3-bucket-name))
       endpoint: ((director-s3-endpoint))
       region: ((director-s3-region))
+      access_key: ((access-key-id))
+      secret_key: ((secret-access-key))
       signature_version: "4"
     skip_director_drain: false
   dns_configuration:
