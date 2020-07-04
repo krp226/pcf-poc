@@ -6,7 +6,7 @@ iaas-configurations:
   key_pair_name: ((bosh-vms-ssh-key-name))
   name: default
   region: ((default-region))
-  secret_access_key: ((bosh-secret-access_key))
+  secret_access_key: ((bosh-secret-access-key))
   security_group: ((bosh-vm-security-group))
   ssh_private_key: ((bosh-ssh-private-key))
 network-assignment:
