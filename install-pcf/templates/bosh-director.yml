@@ -8,7 +8,7 @@ iaas-configurations:
   region: ((default-region))
   secret_access_key: ((bosh-secret-access_key))
   security_group: ((bosh-vm-security-group))
-  ssh_private_key: ((bosh-ssh-private-key))
+  ssh_private_key: | ((bosh-ssh-private-key))
 network-assignment:
   network:
     name: ((singleton-network-name))
