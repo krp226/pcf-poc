@@ -3,8 +3,6 @@ az-configuration:
 - name: us-east-1a
 - name: us-east-1b
 - name: us-east-1c
-bosh-access-key-id: ((access-key-id))
-bosh-secret-access-key: ((secret-access-key))
 bosh-vms-ssh-key-name: pcf-opsman-key-terra
 default-region: us-east-1
 bosh-vm-security-group: sg-0b91a42ebf9fe6cf5

@@ -1,12 +1,12 @@
 az-configuration: ((az-configuration))
 iaas-configurations:
-- access_key_id: ((bosh-access-key-id))
+- access_key_id: ((access-key-id))
   additional_cloud_properties: {}
   encrypted: true
   key_pair_name: ((bosh-vms-ssh-key-name))
   name: default
   region: ((default-region))
-  secret_access_key: ((bosh-secret-access-key))
+  secret_access_key: ((secret-access-key))
   security_group: ((bosh-vm-security-group))
   ssh_private_key: ((bosh-ssh-private-key))
 network-assignment:
