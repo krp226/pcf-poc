@@ -127,7 +127,7 @@ properties-configuration:
       host: ((director-external-db-host))
       password: ((director-external-db-password))
       port: "3306"
-      tls_enabled: false
+      tls_enabled: true
       user: ((director-external-db-user))
     hm_emailer_options:
       enabled: false
