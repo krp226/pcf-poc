@@ -66,7 +66,6 @@ pcf-ondemand-3-subnet-gateway: 10.65.14.1
 pcf-ondemand-3-reserved-ips: 10.65.14.0-10.65.14.4
 director-external-db-host: dev-bosh.cpd89iiyzhwi.us-east-1.rds.amazonaws.com
 director-external-db-user: admin
-director-external-db-password: ((director-external-db-password))
 ntp-servers: 0.amazon.pool.ntp.org, 1.amazon.pool.ntp.org, 2.amazon.pool.ntp.org, 3.amazon.pool.ntp.org
 director-s3-bucket-name: xyz21jblnkxv6921-pcf-ops-manager-bucket
 director-s3-endpoint: https://s3.us-east-1.amazonaws.com
