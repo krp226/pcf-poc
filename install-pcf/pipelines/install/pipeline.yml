@@ -371,6 +371,8 @@ jobs:
       resource: platform-automation
       #trigger: false 
     - get: pcf-automation-git
+      passed: [ configure-director ]
+      trigger: true
     - get: pcf-automation-template-git
     - get: pipeline-utilities
       passed:
