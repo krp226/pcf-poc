@@ -164,7 +164,7 @@ jobs:
                 - |
                   set -eu
                   git clone -b ((git_branch)) configuration configuration-commit
-                  cp generated-state/state.yml configuration-commit/state/((foundation))/state.yml
+                  cp generated-state/state.yml configuration-commit/install-pcf/state/((foundation))/state.yml
                   cd configuration-commit
                   git add -A
                   git config --global user.email "bot@example.com"
