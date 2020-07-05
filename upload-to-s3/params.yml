@@ -8,9 +8,9 @@ git_branch: "master"
 git_template_uri: "git@github.com:kartikeyavadlapatla/pcf-templates.git"
 git_template_branch: "master"
 foundation: "sandbox"
-pas_glob: cf*.pivotal
-pas_slug: elastic-runtime
-pas_version: 2\.7\.5
+#pas_glob: cf*.pivotal
+#pas_slug: elastic-runtime
+pas_version: 2\.5\.(.*)
 #####iaas: vsphere
 stemcell_xenial_version: 97\.204
 stemcell_metrics_version: 170\.82

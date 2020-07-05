@@ -29,3 +29,8 @@ opsman-target: 10.65.16.10
 opsman-username: ((opsman-username))
 opsman-password: ((opsman-password))
 opsman-decryption-passphrase: ((opsman-decryption-passphrase)) 
+storage-backup-bucket: "tile-storage-bucket"
+storage-access-key-id: ((s3-storage-access-key-id))
+storage-secret-access-key: ((s3-storage-secret-access-key))
+storage-endpoint: "s3.us-east-1.amazonaws.com"
+pas-tile-name: "cf-2.5.0-build.297.pivotal"

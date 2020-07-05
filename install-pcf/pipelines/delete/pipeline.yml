@@ -1,0 +1,176 @@
+resource_types:
+
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+
+- name: platform-automation
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: platform-automation
+    product_version: ((platform_automation_version))
+    sort_by: semver
+
+- name: pcf-automation-git 
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+
+- name: pcf-automation-template-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_template_uri))
+    branch: ((git_template_branch))
+ 
+- name: pipeline-utilities
+  type: git
+  source:
+    uri: https://github.com/pivotalservices/pipeline-utilities.git
+
+jobs:
+- name: delete-installation
+  serial: true
+  serial_groups: [ delete ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: create-env-file
+    file: pipeline-utilities/tasks/create-env-file.yml
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+  - task: delete-installation
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/delete-installation.yml
+    input_mapping:
+      platform-automation-tasks: pcf-automation-tasks
+
+- name: delete-opsmanager
+  serial: true
+  serial_groups: [ delete ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: create-env-file
+    file: pipeline-utilities/tasks/create-env-file.yml
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+  - task: delete-vm
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/delete-vm.yml
+    params:
+      OPSMAN_CONFIG_FILE: install-pcf/config/((foundation))/opsman-vars.yml
+      VARS_FILES: vars/creds.yml
+      STATE_FILE: install-pcf/state/((foundation))/state.yml
+    input_mapping:
+      config: pcf-automation-git
+      state: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+      vars: vars
+    ensure: &make-state-commit
+      do:
+        - task: make-commit
+          image: pcf-automation-image
+          input_mapping:
+            configuration: pcf-automation-git   
+          config:
+            platform: linux
+            inputs:
+              - name: generated-state
+              - name: configuration
+            outputs:
+              - name: configuration-commit
+            run:
+              path: bash
+              args:
+                - -c
+                - |
+                  set -eu
+                  git clone -b ((git_branch)) configuration configuration-commit
+                  cp generated-state/state.yml configuration-commit/state/((foundation))/state.yml
+                  cd configuration-commit
+                  git add -A
+                  git config --global user.email "bot@example.com"
+                  git config --global user.name "Friendly Neighborhood Bot"
+                  git commit -m 'updated the state file' || true
+        - put: pcf-automation-git
+          params:
+            repository: configuration-commit
+            rebase: true

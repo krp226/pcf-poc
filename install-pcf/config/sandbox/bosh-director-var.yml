@@ -9,9 +9,9 @@ default-region: us-east-1
 bosh-vm-security-group: sg-0b91a42ebf9fe6cf5
 singleton-network-name: pcf-infra
 singleton-az: us-east-1a
-az3: us-east-1a
+az1: us-east-1a
 az2: us-east-1b
-az1: us-east-1c
+az3: us-east-1c
 dns: 10.65.0.2
 pcf-infra-network: pcf-infra 
 pcf-infra-1-subnet-id: subnet-014227580f6a21566
@@ -31,7 +31,7 @@ pcf-pas-1-subnet-id: subnet-0ac391380b2c43c89
 pcf-pas-1-subnet-cidr: 10.65.4.0/24
 pcf-pas-1-subnet-gateway: 10.65.4.1 
 pcf-pas-1-reserved-ips: 10.65.4.0-10.65.4.4
-pcf-pas-2-subnet-id: subnet-00103adf29eebae09
+pcf-pas-2-subnet-id: subnet-0c0f1a41b6212b507
 pcf-pas-2-subnet-cidr: 10.65.5.0/24
 pcf-pas-2-subnet-gateway: 10.65.5.1
 pcf-pas-2-reserved-ips: 10.65.5.0-10.65.5.4
