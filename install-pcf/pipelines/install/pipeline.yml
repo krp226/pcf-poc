@@ -508,7 +508,7 @@ jobs:
       CONFIG_FILE: install-pcf/templates/pas.yml
       VARS_FILES: |
         vars/creds.yml
-        config/install-pcf/config/((foundation))/pas-vars.yml
+        config/install-pcf/config/((foundation))/pas-var.yml
   - task: apply-change-director
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/apply-director-changes.yml
