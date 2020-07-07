@@ -1,3 +1,4 @@
+---
 product-name: cf
 product-properties:
   .cloud_controller.allow_app_ssh_access:
