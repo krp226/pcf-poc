@@ -3,7 +3,7 @@ product-properties:
   .cloud_controller.allow_app_ssh_access:
     value: true
   .cloud_controller.apps_domain:
-    value: apps.dev.test-pcf.de
+    value: ((app-domain))
   .cloud_controller.default_app_memory:
     value: 1024
   .cloud_controller.default_app_ssh_access:
@@ -29,7 +29,7 @@ product-properties:
   .cloud_controller.staging_timeout_in_seconds:
     value: 900
   .cloud_controller.system_domain:
-    value: sys.dev.test-pcf.de
+    value: ((sys-domain))
   .diego_brain.starting_container_count_maximum:
     value: 200
   .ha_proxy.skip_cert_verify:
@@ -45,7 +45,7 @@ product-properties:
   .mysql_monitor.poll_frequency:
     value: 30
   .mysql_monitor.recipient_email:
-    value: vkartheek.ky1311@gmail.com
+    value: ((mysql-monit-email))
   .mysql_monitor.write_read_delay:
     value: 20
   .mysql_proxy.shutdown_delay:
@@ -111,7 +111,7 @@ product-properties:
     selected_option: external
     value: external
   .properties.credhub_database.external.host:
-    value: dev-credhub.cpd89iiyzhwi.us-east-1.rds.amazonaws.com
+    value: ((credhub-externaldb-host))
   .properties.credhub_database.external.password:
     value:
       secret: ((credhub-externaldb-pwd))
