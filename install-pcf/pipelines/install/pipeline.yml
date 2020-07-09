@@ -330,11 +330,11 @@ jobs:
         vars/creds.yml
         config/install-pcf/config/((foundation))/bosh-director-var.yml
       DIRECTOR_CONFIG_FILE: install-pcf/templates/bosh-director.yml
-  - task: apply-change-director
-    image: pcf-automation-image
-    file: pcf-automation-tasks/tasks/apply-director-changes.yml
-    input_mapping:
-      platform-automation-tasks: pcf-automation-tasks
+#  - task: apply-change-director
+#    image: pcf-automation-image
+#    file: pcf-automation-tasks/tasks/apply-director-changes.yml
+#    input_mapping:
+#      platform-automation-tasks: pcf-automation-tasks
   - task: logout-of-opsmanger
     image: pcf-automation-image
     params:
@@ -509,11 +509,11 @@ jobs:
       VARS_FILES: |
         vars/creds.yml
         config/install-pcf/config/((foundation))/pas-var.yml
-  - task: apply-change-director
-    image: pcf-automation-image
-    file: pcf-automation-tasks/tasks/apply-director-changes.yml
-    input_mapping:
-      platform-automation-tasks: pcf-automation-tasks
+#  - task: apply-change-director
+#    image: pcf-automation-image
+#    file: pcf-automation-tasks/tasks/apply-director-changes.yml
+#    input_mapping:
+#      platform-automation-tasks: pcf-automation-tasks
   - task: logout-of-opsmanger
     image: pcf-automation-image
     params:
