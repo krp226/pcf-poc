@@ -266,8 +266,7 @@ product-properties:
   .properties.system_blobstore_ccpackage_max_valid_packages_stored:
     value: 2
   .properties.system_database:
-    selected_option: internal
-    value: internal
+    value: internal_pxc
   .properties.tcp_routing:
     selected_option: disable
     value: disable
