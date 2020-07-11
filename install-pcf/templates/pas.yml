@@ -109,8 +109,7 @@ product-properties:
   .properties.container_networking_interface_plugin.silk.vtep_port:
     value: 4789
   .properties.credhub_database:
-    selected_option: internal
-    value: internal 
+    value: internal_mysql 
   .properties.credhub_hsm_provider_client_certificate:
     value: {}
   .properties.credhub_hsm_provider_partition_password:
@@ -273,8 +272,7 @@ product-properties:
     selected_option: disable
     value: disable
   .properties.uaa_database:
-    selected_option: internal
-    value: internal
+    value: internal_mysql
   .properties.uaa_session_cookie_max_age:
     value: 28800
   .properties.uaa_session_idle_timeout:
