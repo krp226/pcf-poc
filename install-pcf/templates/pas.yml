@@ -109,19 +109,8 @@ product-properties:
   .properties.container_networking_interface_plugin.silk.vtep_port:
     value: 4789
   .properties.credhub_database:
-    selected_option: external
-    value: external
-  .properties.credhub_database.external.host:
-    value: ((credhub-externaldb-host))
-  .properties.credhub_database.external.password:
-    value:
-      secret: ((credhub-externaldb-pwd))
-  .properties.credhub_database.external.port:
-    value: 3306
-  .properties.credhub_database.external.tls_ca:
-    value: ((credhub-externaldb-pwd)) 
-  .properties.credhub_database.external.username:
-    value: ((credhub-user))
+    selected_option: internal
+    value: internal 
   .properties.credhub_hsm_provider_client_certificate:
     value: {}
   .properties.credhub_hsm_provider_partition_password:
@@ -278,107 +267,14 @@ product-properties:
   .properties.system_blobstore_ccpackage_max_valid_packages_stored:
     value: 2
   .properties.system_database:
-    selected_option: external
-    value: external
-  .properties.system_database.external.account_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.account_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.app_usage_service_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.app_usage_service_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.autoscale_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.autoscale_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.ca_cert:
-    value: ((external-pas-db-cert))
-  .properties.system_database.external.ccdb_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.ccdb_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.credhub_password:
-    value: {}
-  .properties.system_database.external.diego_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.diego_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.host:
-    value: ((external-pas-db-host))
-  .properties.system_database.external.locket_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.locket_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.networkpolicyserver_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.networkpolicyserver_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.nfsvolume_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.nfsvolume_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.notifications_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.notifications_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.port:
-    value: 3306
-  .properties.system_database.external.routing_password:
-    value:
-      secret: ((external-pas-db-passw))
-  .properties.system_database.external.routing_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.silk_password:
-    value:
-      secret: ((external-pas-db-passw)) 
-  .properties.system_database.external.silk_username:
-    value: ((external-pas-db-user))
-  .properties.system_database.external.uaa_password:
-    value: {}
+    selected_option: internal
+    value: internal
   .properties.tcp_routing:
     selected_option: disable
     value: disable
-  .properties.uaa:
+  .properties.uaa_database:
     selected_option: internal
     value: internal
-  .properties.uaa.internal.password_expires_after_months:
-    value: 0
-  .properties.uaa.internal.password_max_retry:
-    value: 5
-  .properties.uaa.internal.password_min_length:
-    value: 0
-  .properties.uaa.internal.password_min_lowercase:
-    value: 0
-  .properties.uaa.internal.password_min_numeric:
-    value: 0
-  .properties.uaa.internal.password_min_special:
-    value: 0
-  .properties.uaa.internal.password_min_uppercase:
-    value: 0
-  .properties.uaa_database:
-    selected_option: external
-    value: external
-  .properties.uaa_database.external.ca_cert:
-    value: ((uaa-db-external-root-cert))
-  .properties.uaa_database.external.host:
-    value: ((uaa-db-external-host))
-  .properties.uaa_database.external.port:
-    value: 3306
-  .properties.uaa_database.external.uaa_password:
-    value:
-      secret: ((uaa-db-external-pwd))
-  .properties.uaa_database.external.uaa_username:
-    value: ((uaa-db-external-usr))
   .properties.uaa_session_cookie_max_age:
     value: 28800
   .properties.uaa_session_idle_timeout:
