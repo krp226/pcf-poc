@@ -116,19 +116,19 @@ properties-configuration:
     blobstore_type: s3
     bosh_recreate_on_next_deploy: false
     bosh_recreate_persistent_disks_on_next_deploy: false
-    database_type: internal
+    database_type: external
     director_worker_count: 5
     encryption:
       keys: []
       providers: []
-#    external_database_options:
-#      connection_options: {}
-#      database: bosh
-#      host: ((director-external-db-host))
-#      password: ((director-external-db-password))
-#      port: "3306"
-#      tls_enabled: false
-#      user: ((director-external-db-user))
+    external_database_options:
+      connection_options: {}
+      database: bosh
+      host: ((director-external-db-host))
+      password: ((director-external-db-password))
+      port: "3306"
+      tls_enabled: false
+      user: ((director-external-db-user))
     hm_emailer_options:
       enabled: false
     hm_pager_duty_options:
