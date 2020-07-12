@@ -1,0 +1,203 @@
+---
+resources:
+- name: pcf-automation-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+
+- name: bbr-release
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: p-bosh-backup-and-restore
+
+- name: after-midnight
+  type: time
+  source:
+    start: ((start_time))
+    stop: ((stop_time))
+    location: America/New_York
+
+opsman_credentials: &opsman_credentials
+  SKIP_SSL_VALIDATION: true
+  OPSMAN_URL: ((opsman-target))
+  OPSMAN_USERNAME: ((opsman-user))
+  OPSMAN_PASSWORD: ((opsman-password))
+  OPSMAN_PRIVATE_KEY: ((opsman-private-key))
+
+s3_credentials: &s3_credentials
+  bucket: ((storage-backup-bucket))
+  access_key_id: ((storage-access-key-id))
+  secret_access_key: ((storage-secret-access-key))
+  endpoint: ((storage-endpoint))
+
+jobs:
+- name: export-om-installation
+  serial: true
+  plan:
+  - aggregate:
+    - get: bbr-pipeline
+    - get: pcf-automation-git
+    - get: after-midnight
+      trigger: true
+  - task: export-om-installation
+    file: pcf-automation-git/installbbr/tasks/export-om-installation/task.yml
+    params:
+      SKIP_SSL_VALIDATION: true
+      OPSMAN_URL: ((opsman-url))
+      OPSMAN_USERNAME: ((ldap_user))
+      OPSMAN_PASSWORD: ((ldap_password))
+  - task: put-om-backup-tos3
+    input_mapping:
+      folder: om-installation
+    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/aws-upload.yml
+    params:
+      <<: *s3_credentials
+      deployment_name: om
+
+- name: bbr-backup-director
+  serial: true
+  plan:
+  - aggregate:
+    - get: bbr-pipeline-tasks-repo
+    - get: after-midnight
+      trigger: true
+    - get: bbr-release
+  - task: extract-binary
+    file: bbr-pipeline-tasks-repo/bbr/tasks/extract-bbr-binary/task.yml
+  - task: bbr-backup-director
+    file: bbr-pipeline-tasks-repo/bbr/tasks/bbr-backup-director/task.yml
+    params:
+      <<: *opsman_credentials
+    on_failure:
+      task: bbr-cleanup-director
+      file: bbr-pipeline-tasks-repo/bbr/tasks/bbr-cleanup-director/task.yml
+      params:
+        <<: *opsman_credentials
+  - task: put-om-backup-tos3
+    input_mapping:
+      folder: director-backup-artifact
+    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/aws-upload.yml
+    params:
+      <<: *s3_credentials
+      deployment_name: director
+
+- name: bbr-backup-pas
+  serial: true
+  plan:
+  - aggregate:
+    - get: bbr-pipeline-tasks-repo
+      passed: [bbr-backup-director]
+    - get: after-midnight
+      trigger: true
+    - get: bbr-release
+  - task: extract-binary
+    file: bbr-pipeline-tasks-repo/bbr/tasks/extract-bbr-binary/task.yml
+  - task: bbr-backup-ert
+    file: bbr-pipeline-tasks-repo/bbr/tasks/bbr-backup-ert/task.yml
+    params:
+      <<: *opsman_credentials
+    on_failure:
+      task: bbr-cleanup-ert
+      file: bbr-pipeline-tasks-repo/bbr/tasks/bbr-cleanup-ert/task.yml
+      params:
+        <<: *opsman_credentials
+  - task: put-om-backup-tos3
+    input_mapping:
+      folder: ert-backup-artifact
+    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/aws-upload.yml
+    params:
+      <<: *s3_credentials
+      deployment_name: pas
+
+- name: mysql-v2-backup
+  plan:
+  - aggregate:
+    - get: bbr-pipeline-tasks-repo
+      #passed: [bbr-backup-director, bbr-backup-pas]
+  - task: mysql-backup
+    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/mysql-v2-backup.yml
+    params:
+      BOSH_CLIENT_SECRET: ((bosh-secret-key))
+      DIRECTOR_IP: ((director_ip))
+      CF_API_ENDPOINT: ((cf-api-endpoint))
+      CF_PASSWORD: ((cf-cli-admin-password))
+      ROOT_CA_CERT: ((root-ca-certs.certificate))
+      ZSCALER_CERT: ((zscaler.certificate))
+      #OPSMAN_BBR_KEY: ((opsmanager-key.private_key))
+      OPSMAN_BBR_KEY: ((opsman-private-key))
+      opsman_url: ((opsman-url))
+  - task: put-om-backup-tos3
+    input_mapping:
+      folder: mysql-v2-backup-artifact 
+    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/aws-upload.yml
+    params:
+      <<: *s3_credentials
+      deployment_name: mysql-v2
+
+- name: rabbitmq-backup
+  plan:
+  - aggregate:
+    - get: bbr-pipeline-tasks-repo
+  - task: rabbitmq-backup
+    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/export-rabbitmq-setting.yml
+    params:
+      bucket: ((storage-backup-bucket))/rabbitmq
+      access_key_id: ((storage-access-key-id))
+      secret_access_key: ((storage-secret-access-key))
+      endpoint: ((storage-endpoint))
+      opsman_url: ((opsman-url))
+      rabbitmq_user: admin
+      rabbitmq_password: admin
+  - task: put-om-backup-tos3
+    input_mapping:
+      folder: rabbitmq-backup-artifact 
+    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/aws-upload.yml
+    params:
+      <<: *s3_credentials
+      deployment_name: rabbitmq 
+
+
+#- name: s3-cleanup
+#  plan:
+#  - aggregate:
+#    - get: bbr-pipeline-tasks-repo
+#      passed: [bbr-backup-pas]
+#    - get: bbr-release
+#  - task: s3-cleanup
+#    file: bbr-pipeline-tasks-repo/bbr/custom-tasks/aws-cleanup.yml
+#    params:
+#      <<: *s3_credentials
+
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+- name: bbr-pipeline-tasks-repo
+  type: git
+  source:
+    uri: git@ssh.dev.azure.com:v3/humana/DevOps/pcf_automation
+    branch: dev
+    private_key: ((git_private_key))
+
+- name: bbr-release
+  type: pivnet
+  source:
+    api_token: ((pivnet-api-token))
+    product_slug: p-bosh-backup-and-restore
+
+- name: after-midnight
+  type: time
+  source:
+#    start: 12:00 AM
+#    stop: 3:00 PM
+    start: ((start_time))
+    stop: ((stop_time)) 
+    location: America/New_York
+

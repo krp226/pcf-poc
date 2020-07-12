@@ -1,0 +1,9 @@
+---
+target: 10.65.16.10
+skip-ssl-validation: true
+connect-timeout: 1600
+request-timeout: 600
+client-id: precreated-client
+client-secret: admin
+trace: false
+
