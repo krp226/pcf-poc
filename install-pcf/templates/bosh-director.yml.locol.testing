@@ -1,0 +1,160 @@
+az-configuration: ((az-configuration))
+iaas-configurations:
+- access_key_id: ((access-key-id))
+  additional_cloud_properties: {}
+  encrypted: true
+  key_pair_name: ((bosh-vms-ssh-key-name))
+  name: default
+  region: ((default-region))
+  secret_access_key: ((secret-access-key))
+  security_group: ((bosh-vm-security-group))
+  ssh_private_key: | 
+    ((bosh-ssh-key))
+network-assignment:
+  network:
+    name: ((singleton-network-name))
+  other_availability_zones: []
+  singleton_availability_zone:
+    name: ((singleton-az)) 
+networks-configuration:
+  icmp_checks_enabled: false
+  networks:
+  - name: ((pcf-infra-network))
+    subnets:
+    - iaas_identifier: ((pcf-infra-1-subnet-id))
+      cidr: ((pcf-infra-1-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-infra-1-subnet-gateway))
+      reserved_ip_ranges: ((pcf-infra-1-reserved-ips))
+      availability_zone_names:
+      - ((az1))
+    - iaas_identifier: ((pcf-infra-2-subnet-id))
+      cidr: ((pcf-infra-2-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-infra-2-subnet-gateway))
+      reserved_ip_ranges: ((pcf-infra-2-reserved-ips))
+      availability_zone_names:
+      - ((az2))
+    - iaas_identifier: ((pcf-infra-3-subnet-id))
+      cidr: ((pcf-infra-3-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-infra-3-subnet-gateway))
+      reserved_ip_ranges: ((pcf-infra-3-reserved-ips))
+      availability_zone_names: 
+      - ((az3))
+  - name: ((pcf-pas-network))
+    subnets:
+    - iaas_identifier: ((pcf-pas-1-subnet-id))
+      cidr: ((pcf-pas-1-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-pas-1-subnet-gateway)) 
+      reserved_ip_ranges: ((pcf-pas-1-reserved-ips))
+      availability_zone_names:
+      - ((az1))
+    - iaas_identifier: ((pcf-pas-2-subnet-id))
+      cidr: ((pcf-pas-2-subnet-cidr))
+      dns: ((dns)) 
+      gateway: ((pcf-pas-2-subnet-gateway))
+      reserved_ip_ranges: ((pcf-pas-2-reserved-ips))
+      availability_zone_names:
+      - ((az2))
+    - iaas_identifier: ((pcf-pas-3-subnet-id))
+      cidr: ((pcf-pas-3-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-pas-3-subnet-gateway))
+      reserved_ip_ranges: ((pcf-pas-3-reserved-ips))
+      availability_zone_names:
+      - ((az3))
+  - name: pcf-services
+    subnets:
+    - iaas_identifier: ((pcf-services-1-subnet-id))
+      cidr: ((pcf-services-1-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-services-1-subnet-gateway))
+      reserved_ip_ranges: ((pcf-services-1-reserved-ips))
+      availability_zone_names:
+      - ((az1))
+    - iaas_identifier: ((pcf-services-2-subnet-id))
+      cidr: ((pcf-services-2-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-services-2-subnet-gateway))
+      reserved_ip_ranges: ((pcf-services-2-reserved-ips))
+      availability_zone_names:
+      - ((az2))
+    - iaas_identifier: ((pcf-services-3-subnet-id))
+      cidr: ((pcf-services-3-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-services-3-subnet-gateway))
+      reserved_ip_ranges: ((pcf-services-3-reserved-ips))
+      availability_zone_names:
+      - ((az3))
+  - name: pcf-ondemand
+    subnets:
+    - iaas_identifier: ((pcf-ondemand-1-subnet-id))
+      cidr: ((pcf-ondemand-1-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-ondemand-1-subnet-gateway))
+      reserved_ip_ranges: ((pcf-ondemand-1-reserved-ips))
+      availability_zone_names:
+      - ((az1))
+    - iaas_identifier: ((pcf-ondemand-2-subnet-id))
+      cidr: ((pcf-ondemand-2-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-ondemand-2-subnet-gateway))
+      reserved_ip_ranges: ((pcf-ondemand-2-reserved-ips))
+      availability_zone_names:
+      - ((az2))
+    - iaas_identifier: ((pcf-ondemand-3-subnet-id))
+      cidr: ((pcf-ondemand-3-subnet-cidr))
+      dns: ((dns))
+      gateway: ((pcf-ondemand-3-subnet-gateway))
+      reserved_ip_ranges: ((pcf-ondemand-3-reserved-ips))
+      availability_zone_names:
+      - ((az3))
+properties-configuration:
+  director_configuration:
+    blobstore_type: s3
+    bosh_recreate_on_next_deploy: false
+    bosh_recreate_persistent_disks_on_next_deploy: false
+    database_type: internal
+    director_worker_count: 5
+    encryption:
+      keys: []
+      providers: []
+#    external_database_options:
+#      connection_options: {}
+#      database: bosh
+#      host: ((director-external-db-host))
+#      password: ((director-external-db-password))
+#      port: "3306"
+#      tls_enabled: false
+#      user: ((director-external-db-user))
+    hm_emailer_options:
+      enabled: false
+    hm_pager_duty_options:
+      enabled: false
+    identification_tags: {}
+    job_configuration_on_tmpfs: false
+    keep_unreachable_vms: false
+    ntp_servers_string: ((ntp-servers))
+    post_deploy_enabled: false
+    resurrector_enabled: true
+    retry_bosh_deploys: false
+    s3_blobstore_options:
+      bucket_name: ((director-s3-bucket-name))
+      endpoint: ((director-s3-endpoint))
+      region: ((director-s3-region))
+      access_key: ((access-key-id))
+      secret_key: ((secret-access-key))
+      signature_version: "4"
+    skip_director_drain: false
+  dns_configuration:
+    excluded_recursors: []
+    handlers: []
+  security_configuration:
+    generate_vm_passwords: true
+    opsmanager_root_ca_trusted_certs: true
+  syslog_configuration:
+    enabled: false
+vmextensions-configuration: []
+vmtypes-configuration: {}
