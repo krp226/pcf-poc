@@ -1,0 +1,702 @@
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+- name: artifactory
+  type: docker-image
+  source:
+    repository: pivotalservices/artifactory-resource
+
+resources:
+
+#- name: timer
+  #type: time
+  #icon: clock-outline
+  #source: {location: America/New_York, start: 8:00 PM, stop: 2:00 AM}
+
+- name: platform-automation-pivnet
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: platform-automation
+    product_version: ((platform_automation_version))
+    sort_by: semver
+
+- name: pcf-automation-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+
+- name: pcf-automation-template-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_template_uri))
+    branch: ((git_template_branch))
+
+- name: pipeline-utilities
+  type: git
+  source:
+    uri: https://github.com/pivotalservices/pipeline-utilities.git
+
+- name: pas-product
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: elastic-runtime
+    product_version: ((pas_version))
+    sort_by: semver
+
+- name: stemcell-metrics-xenial
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: stemcells-ubuntu-xenial
+    product_version: ((stemcell_metrics_version))
+    sort_by: semver
+
+- name: stemcell-ubuntu-xenial
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: stemcells-ubuntu-xenial
+    product_version: ((stemcell_xenial_version))
+    sort_by: semver
+
+- name: redis-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: p-redis
+    product_version: ((redis_version))
+    sort_by: semver
+
+- name: metrics-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: apm
+    product_version: ((metrics_version))
+    sort_by: semver
+
+- name: mysqlv2-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: pivotal-mysql
+    product_version: ((mysqlv2_version))
+    sort_by: semver
+
+- name: rabbitmq-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: p-rabbitmq
+    product_version: ((rabbitmq_version))
+    sort_by: semver
+
+- name: spring-cloud-services-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: p-spring-cloud-services
+    product_version: ((spring_cloud_services_version))
+    sort_by: semver
+
+- name: single-sign-on-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: pivotal_single_sign-on_service
+    product_version: ((single_sign_on_version))
+    sort_by: semver
+
+- name: health-watch-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: p-healthwatch
+    product_version: ((health_watch_version))
+    sort_by: semver
+
+jobs:
+- name: upload-pas-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      trigger: true
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      trigger: true
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: pas-product
+      params:
+        globs: ["cf*.pivotal"]
+      trigger: true
+  - task: put-pas-tos3
+    input_mapping:
+      product: pas-product
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: pas_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-stemcell-xenial-metrics-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      trigger: true
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      trigger: true
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: stemcell-metrics-xenial
+      trigger: true
+      params:
+        globs:
+        - bosh-stemcell-*vsphere*
+  - task: put-stemcell-metrics-xenial--tos3
+    input_mapping:
+      product: stemcell-metrics-xenial
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: xenial_stemcells_metrics
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/bosh-stemcell-*vsphere* s3://${bucket}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/ --no-verify-ssl
+
+- name: upload-stemcell-xenial-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: stemcell-ubuntu-xenial
+      trigger: true
+      params:
+        globs:
+        - bosh-stemcell-*vsphere*
+  - task: put-stemcell-ubuntu-xenial--tos3
+    input_mapping:
+      product: stemcell-ubuntu-xenial
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: xenial_stemcells_ubuntu
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/bosh-stemcell-*vsphere* s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-rabbitmq-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: rabbitmq-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-rabbitmq--tos3
+    input_mapping:
+      product: rabbitmq-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: rabbitmq_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-mysqlv2-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: mysqlv2-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-mysqlv2-tos3
+    input_mapping:
+      product: mysqlv2-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: mysqlv2_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-metrics-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: metrics-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-metrics-tos3
+    input_mapping:
+      product: metrics-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: metrics_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-redis-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: redis-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-redis-tos3
+    input_mapping:
+      product: redis-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: redis_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-single-sign-on-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: single-sign-on-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-single-sign-on-tos3
+    input_mapping:
+      product: single-sign-on-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: single_sign_on_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-stemcell-spring-cloud-services-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: spring-cloud-services-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-spring-cloud-services-tos3
+    input_mapping:
+      product: spring-cloud-services-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: spring_cloud_services_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-healthwatch-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: health-watch-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-healthwatch-tos3
+    input_mapping:
+      product: health-watch-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: health_watch_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
