@@ -18,3 +18,5 @@ resource-bucket: abc123xyz-pcf-resources-bucket
 backup-buildpack-bucket: sandbox-backup-buildpack-bucket-bcbsma-n
 backup-droplet-bucket: sandbox-backup-droplet-bucket-bcbsma-n
 backup-package-bucket: sandbox-backup-package-bucket-bcbsma-n
+buckets-s3-endpoint: https://s3.us-east-1.amazonaws.com
+buckets-s3-region: us-east-1
