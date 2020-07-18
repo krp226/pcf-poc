@@ -11,10 +11,10 @@ az-configuration:
 - name: us-east-1c
 singleton-az: us-east-1a
 credhub_internal_provider_key_name: sandboxcredhubtestkey
-buildpack-bucket:
-droplet-bucket:
-package-bucket:
-resource-bucket:
-backup-buildpack-bucket:
-backup-droplet-bucket:
-backup-package-bucket:
+buildpack-bucket: abc123xyz-pcf-buildpacks-bucket
+droplet-bucket: abc123xyz-pcf-droplets-bucket
+package-bucket: abc123xyz-pcf-packages-bucket
+resource-bucket: abc123xyz-pcf-resources-bucket
+backup-buildpack-bucket: sandbox-backup-buildpack-bucket-bcbsma-n
+backup-droplet-bucket: sandbox-backup-droplet-bucket-bcbsma-n
+backup-package-bucket: sandbox-backup-package-bucket-bcbsma-n
