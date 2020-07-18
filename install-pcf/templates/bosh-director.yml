@@ -10,6 +10,7 @@ iaas-configurations:
   security_group: ((bosh-vm-security-group))
   ssh_private_key: | 
     ((bosh-ssh-key))
+  kms_key_arn: ((bosh-kms-key))
 network-assignment:
   network:
     name: ((singleton-network-name))
