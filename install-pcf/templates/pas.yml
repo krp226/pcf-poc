@@ -111,7 +111,8 @@ product-properties:
   .properties.credhub_internal_provider_keys:
     value:
     - name: ((credhub_internal_provider_key_name))
-      key: ((credhub-encrypt-key-secret))
+      key:
+        secret: ((credhub-encrypt-key-secret))
       primary: true
   .properties.credhub_hsm_provider_client_certificate:
     value: {}
@@ -295,6 +296,49 @@ product-properties:
       private_key_pem: ((uaa-saml-key))
   .uaa.service_provider_key_password:
     value: {}
+  .properties.system_blobstore:
+    selected_option: external
+    value: external
+  .properties.system_blobstore.external.access_key:
+    value: ((access-key-id))
+  .properties.system_blobstore.external.backup_region:
+    value: ((buckets-s3-region))
+  .properties.system_blobstore.external.buildpacks_backup_bucket:
+    value: ((backup-buildpack-bucket))
+  .properties.system_blobstore.external.buildpacks_bucket:
+    value: ((buildpack-bucket))
+  .properties.system_blobstore.external.droplets_backup_bucket:
+    value: ((backup-droplet-bucket))
+  .properties.system_blobstore.external.droplets_bucket:
+    value: ((droplet-bucket))
+  .properties.system_blobstore.external.encryption:
+    value: true
+  .properties.system_blobstore.external.encryption_kms_key_id:
+    value: ((bosh-kms-key))
+  .properties.system_blobstore.external.endpoint:
+    value: ((buckets-s3-endpoint))
+  .properties.system_blobstore.external.iam_instance_profile_authentication:
+    value: false
+  .properties.system_blobstore.external.packages_backup_bucket:
+    value: ((backup-package-bucket))
+  .properties.system_blobstore.external.packages_bucket:
+    value: ((package-bucket))
+  .properties.system_blobstore.external.path_style_s3_urls:
+    value: false
+  .properties.system_blobstore.external.region:
+    value: ((buckets-s3-region))
+  .properties.system_blobstore.external.resources_bucket:
+    value: ((resource-bucket))
+  .properties.system_blobstore.external.secret_key:
+    value:
+      secret: ((secret-access-key))
+  .properties.system_blobstore.external.signature_version:
+    value: "4"
+  .properties.system_blobstore.external.versioning:
+    value: true
+  .properties.system_blobstore_backup_level:
+    selected_option: all
+    value: all
 network-properties:
   network:
     name: pcf-pas
