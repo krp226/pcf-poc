@@ -107,7 +107,12 @@ product-properties:
   .properties.container_networking_interface_plugin.silk.vtep_port:
     value: 4789
   .properties.credhub_database:
-    value: internal_mysql 
+    value: internal_mysql
+  .properties.credhub_internal_provider_keys:
+    value:
+    - name: ((credhub_internal_provider_key_name))
+      key: ((credhub-encrypt-key-secret))
+      primary: true
   .properties.credhub_hsm_provider_client_certificate:
     value: {}
   .properties.credhub_hsm_provider_partition_password:
