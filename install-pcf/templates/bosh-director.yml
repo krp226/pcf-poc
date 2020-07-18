@@ -1,3 +1,4 @@
+---
 az-configuration: ((az-configuration))
 iaas-configurations:
 - access_key_id: ((access-key-id))
