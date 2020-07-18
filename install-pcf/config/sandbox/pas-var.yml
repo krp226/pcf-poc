@@ -1,6 +1,6 @@
 ---
 sys-domain: sys.sandbox.cps-prft.com
-app-domain: apps.sandbox.cps-prft.coms
+app-domain: apps.sandbox.cps-prft.com
 mysql-monit-email: vkartheek.ky1311@gmail.com
 credhub-user: admin
 credhub-encrypt-key-user: admin
@@ -11,3 +11,10 @@ az-configuration:
 - name: us-east-1c
 singleton-az: us-east-1a
 credhub_internal_provider_key_name: sandboxcredhubtestkey
+buildpack-bucket:
+droplet-bucket:
+package-bucket:
+resource-bucket:
+backup-buildpack-bucket:
+backup-droplet-bucket:
+backup-package-bucket:
