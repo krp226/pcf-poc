@@ -10,3 +10,4 @@ az-configuration:
 - name: us-east-1b
 - name: us-east-1c
 singleton-az: us-east-1a
+credhub_internal_provider_key_name: sandboxcredhubtestkey
