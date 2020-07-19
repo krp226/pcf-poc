@@ -8,10 +8,10 @@ plan-1-name: single-node-small-plan
 plan-1-nodes: 1
 plan-2-description: "This plan provides a medium dedicated RabbitMQ node"
 plan-2-name: medium-node-small-plan
-plan-2-nodes: 2
+plan-2-nodes: 3
 plan-3-description: "This plan provides a large dedicated RabbitMQ node"
 plan-3-name: large-node-three-plan
-plan-3-nodes: 3
+plan-3-nodes: 5
 service-network: pcf-services
 ondeamd-network: pcf-ondemand
 azs: [us-east-1a, us-east-1b, us-east-1c]
