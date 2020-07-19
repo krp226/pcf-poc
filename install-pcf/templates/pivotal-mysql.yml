@@ -4,6 +4,12 @@ product-properties:
     value: false
   .properties.audit_logging_enabled:
     value: false
+  .properties.backups_selector.s3.access_key_id:
+    value:
+      secret: ((access-key-id))
+  .properties.backups_selector.s3.secret_access_key:
+    value:
+      secret: ((secret-access-key))
   .properties.backups_selector:
     selected_option: s3
     value: S3 Backups
