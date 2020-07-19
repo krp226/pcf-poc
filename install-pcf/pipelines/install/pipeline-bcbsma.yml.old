@@ -46,7 +46,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: xenial_stemcells_ubuntu/((xenial-stemcell-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: health-watch-stemcell
   type: s3
@@ -55,7 +58,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: healthwatch_stemcells_ubuntu/((healthwatch-stemcell-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: pas-product
   type: s3
@@ -64,7 +70,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: pas_tiles/((pas-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: metrics-product
   type: s3
@@ -73,7 +82,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: metrics_tiles/((metric-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: mysql-product
   type: s3
@@ -82,7 +94,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: mysqlv2_tiles/((mysqlv2-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
    
 - name: rabbitmq-product
   type: s3
@@ -91,7 +106,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: rabbitmq_tiles/((rabbitmq-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: redis-product
   type: s3
@@ -100,7 +118,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: redis_tiles/((redis-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: healthwatch-product
   type: s3
@@ -109,7 +130,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: health_watch_tiles/((healthwatch-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: springcloud-product
   type: s3
@@ -118,7 +142,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: spring_cloud_services_tiles/((springcloud-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: credhub-product
   type: s3
@@ -127,7 +154,10 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: credhub_tiles/((credhub-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 - name: metrics-store-product
   type: s3
@@ -136,12 +166,15 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
+    #regexp: pas_tiles/cf-2.5.(.*).pivotal
+    #regexp: pas_tiles/cf-2.5.0-build.297.pivotal
     versioned_file: metrics_store_tiles/((metric-store-tile-name))
+    #regexp: pas_tiles/cf-2.5.0-build.(.*)
 
 jobs:
 - name: install-opsman
   serial: true
-  serial_groups: [ create-director ]
+  serial_groups: [ install ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -256,6 +289,83 @@ jobs:
           params:
             repository: configuration-commit
             rebase: true
+          #  - task: creating-opsman-var
+          #config:
+          #platform: linux
+          #image_resource:
+          #type: docker-image
+          #source:
+          # repository: ubuntu
+          #outputs:
+          #- name: opsvars
+          #params:
+          #pivnet_file_glob: ((pivnet-file-glob))
+          #product_version_regex: ((product-version-regex))
+          #pivnet_api_token: ((pivnet_token))
+          #run:
+          #path: bash
+          #args:
+          #- -exc
+          #- |
+          #set -eux
+          #echo "---" > var.yml
+          #echo "pivnet-file-glob: ${pivnet_file_glob}" >> var.yml
+          #echo "product-version-regex: ${product_version_regex}" >> var.yml
+          #echo "pivnet-api-token: ${pivnet_api_token}" >> var.yml
+          #cat var.yml
+          #cp var.yml opsvars/vars.yml
+          #- task: download-product        
+          #image: pcf-automation-image
+          #file: pcf-automation-tasks/tasks/download-product.yml
+          #params:
+          #CONFIG_FILE: install-pcf/templates/download-ops-manager.yml
+          #VARS_FILES: vars/vars.yml
+          #input_mapping:
+          #config: pcf-automation-git 
+          #platform-automation-tasks: pcf-automation-tasks
+          #vars: opsvars
+          #- task: create-vm
+          #image: pcf-automation-image
+          #file: pcf-automation-tasks/tasks/create-vm.yml
+          #params:
+          #OPSMAN_CONFIG_FILE: install-pcf/config/((foundation))/opsman-vars.yml
+          #VARS_FILES: vars/creds.yml
+          #input_mapping:
+          #config: pcf-automation-git
+          #state: pcf-automation-git
+          #image: downloaded-product
+          #platform-automation-tasks: pcf-automation-tasks
+          #vars: vars
+          #ensure: &make-state-commit
+          #do:
+          #- task: make-commit
+          #image: pcf-automation-image
+          #input_mapping:
+          #  configuration: pcf-automation-git
+          #config:
+          #  platform: linux
+          #  inputs:
+          #    - name: generated-state
+          #    - name: configuration
+          #  outputs:
+          #    - name: configuration-commit
+          #  run:
+          #    path: bash
+          #    args:
+          #      - -c
+          #      - |
+          #        set -eux
+          #        git clone -b ((git_branch)) configuration configuration-commit
+          #        cp generated-state/state.yml configuration-commit/install-pcf/state/((foundation))/state.yml
+          #        cd configuration-commit
+          #        git add -A
+          #        git config --global user.email "bot@example.com"
+          #        git config --global user.name "Friendly Neighborhood Bot"
+          #        git commit -m 'updated the state file' || true
+        #- put: pcf-automation-git
+        #  params:
+        #    repository: configuration-commit
+        #    rebase: true
   - task: create-auth-file
     config:
       platform: linux
@@ -315,7 +425,7 @@ jobs:
 
 - name: configure-director 
   serial: true
-  serial_groups: [ create-director ]
+  serial_groups: [ install ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -333,6 +443,7 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      trigger: true
     - get: pcf-automation-template-git
     - get: pipeline-utilities
   - task: credhub-interpolate
@@ -394,7 +505,7 @@ jobs:
 
 - name: add-xenial-stemcell
   serial: true
-  serial_groups: [ add-stemcells ]
+  serial_groups: [ xenial-stemcells ]
   plan:
   - aggregate:
     - get: xenial-stemcell
@@ -411,9 +522,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed: [ configure-pas, configure-director ]
+      trigger: true
     - get: pcf-automation-template-git
+      passed: [ configure-pas, configure-director]
+      trigger: true
     - get: pipeline-utilities
-      passed: [upload-and-stage-pas]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -448,7 +562,7 @@ jobs:
 
 - name: add-health-watch-stemcell
   serial: true
-  serial_groups: [ add-stemcells ]
+  serial_groups: [ xenial-stemcells ]
   plan:
   - aggregate:
     - get: health-watch-stemcell
@@ -466,9 +580,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed: [ configure-pas, configure-director ]
+      trigger: true
     - get: pcf-automation-template-git
+      passed: [ configure-pas, configure-director]
+      trigger: true
     - get: pipeline-utilities
-      passed: [upload-and-stage-pas]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -503,7 +620,7 @@ jobs:
 
 - name: upload-and-stage-pas
   serial: true
-  serial_groups: [ create-pas ]
+  serial_groups: [ pas ]
   plan:
   - aggregate:
     - get: pas-product
@@ -520,9 +637,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-director ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-director ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -557,7 +677,7 @@ jobs:
 
 - name: configure-pas
   serial: true
-  serial_groups: [ create-pas ]
+  serial_groups: [ pas ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -573,9 +693,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-pas
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-pas
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-pas ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -635,7 +760,7 @@ jobs:
 
 - name: upload-and-stage-mysql
   serial: true
-  serial_groups: [ create-mysql ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: mysql-product
@@ -652,9 +777,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -688,7 +816,7 @@ jobs:
             om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
 - name: upload-and-stage-rabbitmq
   serial: true
-  serial_groups: [ create-rabbitmq ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: rabbitmq-product
@@ -705,9 +833,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -741,7 +872,7 @@ jobs:
             om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
 - name: upload-and-stage-redis
   serial: true
-  serial_groups: [ create-redis ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: redis-product
@@ -758,9 +889,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -792,9 +926,9 @@ jobs:
           - |
             set -ex
             om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
-- name: upload-and-stage-health-watch
+- name: upload-and-stage-healthwatch
   serial: true
-  serial_groups: [ create-health-watch ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: healthwatch-product
@@ -811,9 +945,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -846,9 +983,9 @@ jobs:
             set -ex
             om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
 
-- name: upload-and-stage-spring-cloud
+- name: upload-and-stage-springcloud
   serial: true
-  serial_groups: [ create-spring-cloud ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: springcloud-product
@@ -865,9 +1002,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -878,7 +1018,7 @@ jobs:
       OPSMAN_USERNAME: ((opsman-username))
       OPSMAN_PASSWORD: ((opsman-password))
       OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
-  - task: upload-and-stage-spring-cloud
+  - task: upload-and-stage-springcloud
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/upload-and-stage-product.yml
     input_mapping:
@@ -902,7 +1042,7 @@ jobs:
 
 - name: upload-and-stage-credhub
   serial: true
-  serial_groups: [ create-credhub ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: credhub-product
@@ -920,9 +1060,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed: [  configure-pas ]
+      trigger: true
     - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -957,7 +1100,7 @@ jobs:
 
 - name: upload-and-stage-metrics
   serial: true
-  serial_groups: [ create-metrics ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: metrics-product
@@ -975,9 +1118,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1012,7 +1158,7 @@ jobs:
 
 - name: upload-and-stage-metrics-store
   serial: true
-  serial_groups: [ create-store ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: metrics-store-product
@@ -1030,9 +1176,12 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
       passed: [ configure-pas ]
+      trigger: true
+    - get: pcf-automation-template-git
+      passed: [ configure-pas ]
+      trigger: true
+    - get: pipeline-utilities
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1067,7 +1216,7 @@ jobs:
 
 - name: configure-mysql
   serial: true
-  serial_groups: [ create-mysql ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1083,9 +1232,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-mysql
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-mysql
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-mysql ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1145,7 +1299,7 @@ jobs:
 
 - name: configure-metric-store
   serial: true
-  serial_groups: [ create-store ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1161,9 +1315,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-metrics-store
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-metrics-store
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-metrics-store ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1223,7 +1382,7 @@ jobs:
 
 - name: configure-credhub-broker
   serial: true
-  serial_groups: [ create-credhub ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1239,9 +1398,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-credhub
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-credhub
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-credhub ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1301,7 +1465,7 @@ jobs:
 
 - name: configure-Metrics
   serial: true
-  serial_groups: [ create-metrics ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1317,9 +1481,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-metrics
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-metrics
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-metrics ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1377,9 +1546,9 @@ jobs:
             set -ex
             om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
 
-- name: configure-spring-cloud
+- name: configure-Spring-cloud
   serial: true
-  serial_groups: [ create-spring-cloud ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1395,9 +1564,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-springcloud
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-springcloud
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-spring-cloud ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1457,7 +1631,7 @@ jobs:
 
 - name: configure-health-watch
   serial: true
-  serial_groups: [ create-health-watch ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1473,9 +1647,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-healthwatch
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-healthwatch
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-health-watch ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1535,7 +1714,7 @@ jobs:
 
 - name: configure-redis
   serial: true
-  serial_groups: [ create-redis ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1551,9 +1730,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-redis
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-redis
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-redis ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -1613,7 +1797,7 @@ jobs:
 
 - name: configure-rabbitmq
   serial: true
-  serial_groups: [ create-rabbitmq ]
+  serial_groups: [ tiles ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -1629,9 +1813,14 @@ jobs:
         - platform-automation-image-*
       resource: platform-automation
     - get: pcf-automation-git
+      passed:
+      - upload-and-stage-rabbitmq
+      trigger: true
     - get: pcf-automation-template-git
+      passed:
+      - upload-and-stage-rabbitmq
+      trigger: true
     - get: pipeline-utilities
-      passed: [ upload-and-stage-rabbitmq ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
