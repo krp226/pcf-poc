@@ -52,20 +52,20 @@ resources:
     product_version: ((pas_version))
     sort_by: semver
 
-- name: stemcell-metrics-xenial
-  type: pivnet
-  source:
-    api_token: ((pivnet_token))
-    product_slug: stemcells-ubuntu-xenial
-    product_version: ((stemcell_metrics_version))
-    sort_by: semver
-
 - name: stemcell-ubuntu-xenial
   type: pivnet
   source:
     api_token: ((pivnet_token))
     product_slug: stemcells-ubuntu-xenial
     product_version: ((stemcell_xenial_version))
+    sort_by: semver
+
+- name: healthwatch-stemcell-xenial
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: stemcells-ubuntu-xenial
+    product_version: ((healthwatch_stemcell_version))
     sort_by: semver
 
 - name: redis-image
@@ -124,7 +124,77 @@ resources:
     product_version: ((health_watch_version))
     sort_by: semver
 
+- name: credhub-service-broker-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: credhub-service-broker
+    product_version: ((credhub_version))
+    sort_by: semver
+
+- name: metric-store-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: p-metric-store
+    product_version: ((metric_store_version))
+    sort_by: semver
+
 jobs:
+- name: upload-credhub-to-s3
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: credhub-service-broker-image
+      params:
+        globs: ["*.pivotal"]
+  - task: put-credhub-tos3
+    input_mapping:
+      product: credhub-service-broker-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: credhub_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
 - name: upload-pas-to-s3
   plan:
   - aggregate:
@@ -184,71 +254,9 @@ jobs:
           aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
           aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
 
-- name: upload-stemcell-xenial-metrics-to-s3
-  plan:
-  - aggregate:
-          #- get: timer
-          #trigger: true
-    - get: pcf-automation-tasks
-      params:
-        unpack: true
-        globs:
-        - platform-automation-tasks-*
-      trigger: true
-      resource: platform-automation-pivnet
-    - get: pcf-automation-image
-      params:
-        unpack: true
-        globs:
-        - platform-automation-image-*
-      trigger: true
-      resource: platform-automation-pivnet
-    - get: pcf-automation-git
-    - get: pcf-automation-template-git
-    - get: pipeline-utilities
-    - get: stemcell-metrics-xenial
-      trigger: true
-      params:
-        globs:
-        - bosh-stemcell-*vsphere*
-  - task: put-stemcell-metrics-xenial--tos3
-    input_mapping:
-      product: stemcell-metrics-xenial
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: ubuntu
-      inputs:
-      - name: product
-      params:
-        bucket: ((storage-backup-bucket))
-        access_key_id: ((storage-access-key-id))
-        secret_access_key: ((storage-secret-access-key))
-        endpoint: ((storage-endpoint))
-        bucket_name: xenial_stemcells_metrics
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          set -eux
-          echo "Installing the aws cli"
-          apt-get update > /dev/null 2>&1
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get install awscli -yq  > /dev/null 2>&1
-          export AWS_ACCESS_KEY_ID=$access_key_id
-          export AWS_SECRET_ACCESS_KEY=$secret_access_key
-          ls  product/
-          aws --endpoint-url=https://${endpoint} s3 cp product/bosh-stemcell-*vsphere* s3://${bucket}/ --no-verify-ssl
-          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/ --no-verify-ssl
-
 - name: upload-stemcell-xenial-to-s3
   plan:
   - aggregate:
-          #- get: timer
-          #trigger: true
     - get: pcf-automation-tasks
       params:
         unpack: true
@@ -268,7 +276,7 @@ jobs:
       trigger: true
       params:
         globs:
-        - bosh-stemcell-*vsphere*
+        - light-bosh-stemcell-*-aws-*
   - task: put-stemcell-ubuntu-xenial--tos3
     input_mapping:
       product: stemcell-ubuntu-xenial
@@ -299,7 +307,63 @@ jobs:
           export AWS_ACCESS_KEY_ID=$access_key_id
           export AWS_SECRET_ACCESS_KEY=$secret_access_key
           ls  product/
-          aws --endpoint-url=https://${endpoint} s3 cp product/bosh-stemcell-*vsphere* s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 cp product/light-bosh-stemcell-* s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-stemcell-healthwatch-to-s3
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: healthwatch-stemcell-xenial
+      trigger: true
+      params:
+        globs:
+        - light-bosh-stemcell-*-aws-*
+  - task: put-stemcell-ubuntu-xenial--tos3
+    input_mapping:
+      product: healthwatch-stemcell-xenial
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: healthwatch_stemcells_ubuntu
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/light-bosh-stemcell-* s3://${bucket}/${bucket_name}/ --no-verify-ssl
           aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
 
 - name: upload-rabbitmq-s3
@@ -590,8 +654,6 @@ jobs:
 - name: upload-stemcell-spring-cloud-services-to-s3
   plan:
   - aggregate:
-          #- get: timer
-          #trigger: true
     - get: pcf-automation-tasks
       params:
         unpack: true
@@ -685,6 +747,63 @@ jobs:
         secret_access_key: ((storage-secret-access-key))
         endpoint: ((storage-endpoint))
         bucket_name: health_watch_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
+- name: upload-metric-store-to-s3
+  plan:
+  - aggregate:
+          #- get: timer
+          #trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: metric-store-image
+      params:
+        globs: ["*.pivotal"]
+      trigger: true
+  - task: put-metricstore-tos3
+    input_mapping:
+      product: metric-store-image
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: metrics_store_tiles
       run:
         path: bash
         args:

@@ -1,0 +1,16 @@
+az-configuration:
+- name: us-east-1a
+- name: us-east-1b
+- name: us-east-1c
+singleton-az: us-east-1a
+plan-1-description: "This plan provides a single dedicated RabbitMQ node"
+plan-1-name: single-node-small-plan
+plan-1-nodes: 1
+plan-2-description: "This plan provides a medium dedicated RabbitMQ node"
+plan-2-name: medium-node-small-plan
+plan-2-nodes: 2
+plan-3-description: "This plan provides a large dedicated RabbitMQ node"
+plan-3-name: large-node-three-plan
+plan-3-nodes: 3
+service-network: pcf-services
+ondeamd-network: pcf-ondemand

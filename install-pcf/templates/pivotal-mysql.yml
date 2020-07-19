@@ -1,0 +1,128 @@
+product-name: pivotal-mysql
+product-properties:
+  .properties.allow_lower_case_table_names_via_config_param:
+    value: false
+  .properties.audit_logging_enabled:
+    value: false
+  .properties.backups_selector:
+    selected_option: s3
+    value: S3 Backups
+  .properties.backups_selector.s3.bucket_name:
+    value: ((backup-bucket))
+  .properties.backups_selector.s3.cron_schedule:
+    value: ((backup-cron_schedule))
+  .properties.backups_selector.s3.enable_email_alerts:
+    value: false
+  .properties.backups_selector.s3.endpoint_url:
+    value: ((backup-s3-end-point))
+  .properties.backups_selector.s3.path:
+    value: ((backup-path))
+  .properties.backups_selector.s3.region:
+    value: ((backup-region))
+  .properties.canary_instances:
+    value: 0
+  .properties.deprecated_bindings_string:
+    value: X
+  .properties.enable_lower_case_table_names:
+    value: false
+  .properties.enable_read_only_admin:
+    value: false
+  .properties.enable_secure_binding_credentials:
+    value: true
+  .properties.enable_tls_selector:
+    selected_option: required
+    value: required
+  .properties.global_recipient_email:
+    value: ((email))
+  .properties.global_service_instance_limit:
+    value: 200
+  .properties.local_infile:
+    value: false
+  .properties.mysql_metrics_frequency:
+    value: 30
+  .properties.plan1_selector:
+    selected_option: ((plan1-type))
+    value: ((plan1-type))
+  .properties.plan1_selector.single_node.access_dropdown:
+    value: enable
+  .properties.plan1_selector.single_node.az_multi_select:
+    value: ((plan1-azs))
+  .properties.plan1_selector.single_node.description:
+    value: ((plan1-description))
+  .properties.plan1_selector.single_node.name:
+    value: ((plan1-node-name))
+  .properties.plan1_selector.single_node.paid_plan:
+    value: false
+  .properties.plan2_selector:
+    selected_option: ((plan2-type))
+    value: ((plan2-type))
+  .properties.plan2_selector.leader_follower.access_dropdown:
+    value: enable
+  .properties.plan2_selector.leader_follower.az_multi_select:
+    value: ((plan2-azs))
+  .properties.plan2_selector.leader_follower.description:
+    value: ((plan2-description))
+  .properties.plan2_selector.leader_follower.name:
+    value: ((plan2-node-name))
+  .properties.plan2_selector.leader_follower.paid_plan:
+    value: false
+  .properties.plan3_selector:
+    selected_option: ((plan3-type))
+    value: ((plan3-type))
+  .properties.plan3_selector.galera.access_dropdown:
+    value: enable
+  .properties.plan3_selector.galera.az_multi_select:
+    value: ((plan3-azs))
+  .properties.plan3_selector.galera.description:
+    value: ((plan3-description))
+  .properties.plan3_selector.galera.instance_limit:
+    value: 30
+  .properties.plan3_selector.galera.name:
+    value: ((plan3-node-name))
+  .properties.plan3_selector.galera.paid_plan:
+    value: false
+  .properties.plan4_selector:
+    selected_option: inactive
+    value: Inactive
+  .properties.plan5_selector:
+    selected_option: inactive
+    value: Inactive
+  .properties.plan6_selector:
+    selected_option: inactive
+    value: Inactive
+  .properties.plan7_selector:
+    selected_option: inactive
+    value: Inactive
+  .properties.plan8_selector:
+    selected_option: inactive
+    value: Inactive
+  .properties.plan9_selector:
+    selected_option: inactive
+    value: Inactive
+  .properties.request_timeout:
+    value: 120
+  .properties.simultaneous_upgrades:
+    value: 1
+  .properties.userstat:
+    value: false
+  .properties.wait_timeout:
+    value: 28800
+network-properties:
+  network:
+    name: ((service-network))
+  other_availability_zones: ((az-configuration))
+  service_network:
+    name: ((ondemand-network))
+  singleton_availability_zone:
+    name: ((singleton-network))
+syslog-properties:
+  address: null
+  custom_rsyslog_configuration: null
+  enabled: false
+  forward_debug_logs: false
+  permitted_peer: null
+  port: null
+  queue_size: null
+  ssl_ca_certificate: null
+  tls_enabled: false
+  transport_protocol: tcp

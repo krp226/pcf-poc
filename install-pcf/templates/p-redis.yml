@@ -1,0 +1,105 @@
+product-name: p-redis
+product-properties:
+  .cf-redis-broker.lua_scripting_enabled:
+    value: false
+  .cf-redis-broker.redis_maxmemory:
+    value: 512MB
+  .cf-redis-broker.service_instance_limit:
+    value: 5
+  .properties.backups_selector:
+    selected_option: s3
+    value: S3 Backups
+  .properties.backups_selector.s3.access_key_id:
+    value: ((access-key-id))
+  .properties.backups_selector.s3.aws_secret_access_key:
+     secret: ((secret-access-key))
+  .properties.backups_selector.s3.bg_save_timeout:
+    value: 10
+  .properties.backups_selector.s3.bucket_name:
+    value: ((s3-backup-bucket-name))
+  .properties.backups_selector.s3.cron_schedule:
+    value: ((s3-backup-cron-job))
+  .properties.backups_selector.s3.endpoint_url:
+    value: ((s3-bucket-endpoint))
+  .properties.backups_selector.s3.path:
+    value: ((s3-bucket-path))
+  .properties.backups_selector.s3.region:
+    value: ((s3-bucket-region))
+  .properties.backups_selector.s3.signature_version:
+    value: "4"
+  .properties.canary_org_space_selector:
+    selected_option: inactive
+    value: "No"
+  .properties.metrics_polling_interval:
+    value: 30
+  .properties.plan_collection:
+    value:
+    - az_multi_select: ((az-configuration))
+      cf_service_access: enable
+      configured_plan_id: null
+      description: ((small-plan-description))
+      disk_size: ((small-plan-disk))
+      instance_limit: 20
+      lua_scripting: false
+      maxclients: 1000
+      name: ((small-plan-name))
+      tcp_keepalive: 60
+      timeout: 3600
+      vm_type: ((small-plan-vm))
+    - az_multi_select: ((az-configuration))
+      cf_service_access: enable
+      configured_plan_id: null
+      description: ((medium-plan-description))
+      disk_size: ((medium-plan-disk))
+      instance_limit: 20
+      lua_scripting: false
+      maxclients: 1000
+      name: ((medium-plan-name))
+      tcp_keepalive: 60
+      timeout: 3600
+      vm_type: ((medium-plan-vm))
+    - az_multi_select: ((az-configuration))
+      cf_service_access: enable
+      configured_plan_id: null
+      description: ((large-plan-description)) 
+      disk_size: ((large-plan-disk))
+      instance_limit: 20
+      lua_scripting: false
+      maxclients: 1000
+      name: ((large-plan-name))
+      tcp_keepalive: 60
+      timeout: 3600
+      vm_type: ((large-plan-vm))
+  .properties.tls_enable_selector:
+    selected_option: active
+    value: Optional - Developers may configure their apps to use TLS.
+  .redis-on-demand-broker.enable_create_swap_delete:
+    value: false
+  .redis-on-demand-broker.maximum_parallel_upgrades:
+    value: 1
+  .redis-on-demand-broker.service_instance_limit:
+    value: 20
+  .redis-on-demand-broker.service_instance_sharing:
+    value: false
+  .redis-on-demand-broker.upgrade_canary_number:
+    value: 1
+network-properties:
+  network:
+    name: ((service-network))
+  other_availability_zones: ((az-configuration))
+  service_network:
+    name: ((ondemand-network))
+  singleton_availability_zone:
+    name: ((singleton-az))
+syslog-properties:
+  address: null
+  custom_rsyslog_configuration: null
+  enabled: false
+  forward_debug_logs: false
+  permitted_peer: null
+  port: null
+  queue_size: null
+  ssl_ca_certificate: null
+  tls_enabled: false
+  transport_protocol: tcp
+

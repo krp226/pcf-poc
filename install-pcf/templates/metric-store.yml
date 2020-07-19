@@ -1,0 +1,18 @@
+product-name: metric-store
+network-properties:
+  network:
+    name: ((service-network))
+  other_availability_zones: ((az-configuration))
+  singleton_availability_zone:
+    name: ((singleton-az))
+syslog-properties:
+  address: null
+  custom_rsyslog_configuration: null
+  enabled: false
+  forward_debug_logs: false
+  permitted_peer: null
+  port: null
+  queue_size: null
+  ssl_ca_certificate: null
+  tls_enabled: false
+  transport_protocol: tcp

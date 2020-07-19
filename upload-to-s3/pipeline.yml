@@ -111,7 +111,69 @@ resources:
     product_version: ((single-sign-on_version))
     sort_by: semver
 
+- name: credhub-service-broker-image
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: credhub-service-broker
+    product_version: ((credhub-service-broker_version))
+    sort_by: semver
+
 jobs:
+- name: upload-credhub-to-s3
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+    - get: credhub-product
+      params:
+        globs: ["cf*.pivotal"]
+  - task: put-credhub-tos3
+    input_mapping:
+      product: credhub-product
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: ubuntu
+      inputs:
+      - name: product
+      params:
+        bucket: ((storage-backup-bucket))
+        access_key_id: ((storage-access-key-id))
+        secret_access_key: ((storage-secret-access-key))
+        endpoint: ((storage-endpoint))
+        bucket_name: credhub_tiles
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          set -eux
+          echo "Installing the aws cli"
+          apt-get update > /dev/null 2>&1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install awscli -yq vim  > /dev/null 2>&1
+          export AWS_ACCESS_KEY_ID=$access_key_id
+          export AWS_SECRET_ACCESS_KEY=$secret_access_key
+          ls  product/
+          aws --endpoint-url=https://${endpoint} s3 cp product/*.pivotal s3://${bucket}/${bucket_name}/ --no-verify-ssl
+          aws --endpoint-url=https://${endpoint} s3 ls s3://${bucket}/${bucket_name}/ --no-verify-ssl
+
 - name: upload-pas-to-s3
   plan:
   - aggregate:

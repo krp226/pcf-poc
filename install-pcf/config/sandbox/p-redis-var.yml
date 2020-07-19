@@ -1,0 +1,26 @@
+s3-backup-bucket-name: tile-storage-bucket-bcbsma
+s3-backup-cron-job: "0 0 * * *"
+s3-bucket-endpoint: https://s3.amazonaws.com
+s3-bucket-path: redisbackup
+s3-bucket-region: us-east-1
+az-configuration:
+- name: us-east-1a
+- name: us-east-1b
+- name: us-east-1c
+singleton-az: us-east-1a
+small-plan-description: This plan provides a test on-demand Redis instance, tailored for caching use-cases with persistence to disk enabled
+small-plan-name: small-on-demand-cache
+small-plan-vm: t2.micro
+small-plan-disk: "2 G"
+medium-plan-description: This plan provides a test on-demand Redis instance, tailored for caching use-cases with persistence to disk enabled
+medium-plan-name: small-on-demand-cache
+medium-plan-vm: t2.micro
+medium-plan-disk: "2 G"
+large-plan-description: This plan provides a test on-demand Redis instance, tailored for caching use-cases with persistence to disk enabled
+large-plan-name: small-on-demand-cache
+large-plan-vm: t2.micro
+large-plan-disk: "2 G"
+service-network: pcf-services
+ondemand-network: pcf-ondemand
+
+

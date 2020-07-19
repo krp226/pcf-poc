@@ -1,0 +1,26 @@
+---
+backup-bucket: "tile-storage-bucket-bcbsma"
+backup-cron-schedule: "0 */8 * * *"
+backup-s3-end-point: https://s3.amazonaws.com
+backup-path: redisbackup
+backup-region: "us-east-1"
+email: kartheek.ramakrishna@perficient.com
+plan1-type: "single-node"
+plan1-azs: [us-east-1a, us-east-1b, us-east-1c]
+plan1-description: "This plan provides a small dedicated MySQL instance."
+plan1-node-name: "db-small"
+plan2-type: "leader_follower"
+plan2-azs: [us-east-1a, us-east-1b, us-east-1c]
+plan2-description: "This plan provides a medium dedicated MySQL instance."
+plan2-node-name: "db-medium"
+plan3-type: galera
+plan3-azs: [us-east-1a, us-east-1b, us-east-1c]
+plan3-description: "This plan provides a large dedicated MySQL instance."
+plan3-node-name: "db-large"
+az-configuration:
+- name: us-east-1a
+- name: us-east-1b
+- name: us-east-1c
+service-network: "pcf-services"
+ondemand-network: "pcf-ondemand"
+singleton-network: "us-east-1a"

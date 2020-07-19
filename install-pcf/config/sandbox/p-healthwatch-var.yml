@@ -1,0 +1,10 @@
+healthcheck-az: us-east-1a
+opsman-url: "https://10.65.16.10/"
+service-network: pcf-services
+az-configuration:
+- name: us-east-1a
+- name: us-east-1b
+- name: us-east-1c
+singleton-az: us-east-1a
+ondemand-network: pcf-ondemand
+singleton-az: us-east-1a

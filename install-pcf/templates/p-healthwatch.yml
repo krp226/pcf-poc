@@ -1,0 +1,44 @@
+product-name: p-healthwatch
+product-properties:
+  .healthwatch-forwarder.boshhealth_instance_count:
+    value: 1
+  .healthwatch-forwarder.boshtasks_instance_count:
+    value: 2
+  .healthwatch-forwarder.canary_instance_count:
+    value: 2
+  .healthwatch-forwarder.cli_instance_count:
+    value: 2
+  .healthwatch-forwarder.health_check_az:
+    value: ((healthcheck-az))
+  .healthwatch-forwarder.ingestor_instance_count:
+    value: 4
+  .healthwatch-forwarder.opsman_instance_count:
+    value: 2
+  .healthwatch-forwarder.publish_to_eva:
+    value: true
+  .healthwatch-forwarder.worker_instance_count:
+    value: 1
+  .mysql.skip_name_resolve:
+    value: true
+  .properties.boshtasks:
+    selected_option: disable
+    value: disable
+  .properties.indicators_selector:
+    selected_option: inactive
+    value: "No"
+  .properties.opsman:
+    selected_option: enable
+    value: enable
+  .properties.opsman.enable.url:
+    value: ((opsman-url))
+  .properties.syslog_selector:
+    selected_option: inactive
+    value: "No"
+network-properties:
+  network:
+    name: ((service-network))
+  other_availability_zones: ((az-configuration))
+  service_network:
+    name: ((ondemand-network))
+  singleton_availability_zone:
+    name: ((singleton-az))

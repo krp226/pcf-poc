@@ -1,0 +1,18 @@
+product-name: credhub-service-broker
+product-properties:
+  .properties.allow_paid_service_plans:
+    value: false
+  .properties.apply_open_security_group:
+    value: false
+  .properties.credhub_broker_enable_global_access_to_plans:
+    value: true
+  .properties.org:
+    value: credhub-service-broker-org
+  .properties.space:
+    value: credhub-service-broker-space
+network-properties:
+  network:
+    name: pcf-services
+  other_availability_zones: ((az-configuration))
+  singleton_availability_zone:
+    name: ((singleton-az))

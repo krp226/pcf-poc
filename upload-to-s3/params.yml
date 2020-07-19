@@ -11,12 +11,9 @@ foundation: "sandbox"
 #pas_glob: cf*.pivotal
 #pas_slug: elastic-runtime
 pas_version: 2\.9\.(.*)
-#####iaas: vsphere
 stemcell_xenial_version: 621\.(.*)
-stemcell_metrics_version: 170\.82
+healthwatch_stemcell_version: 456\.(.*)
 metrics_version: 2\.0\.(.*)
-metrics_stemcell: "170.82"
-xenial_stemcell: "456.74"
 redis_version: 2\.3\.(.*)
 redis_enterprise_version: 5\.4\.(.*)
 mysqlv2_version: 2\.8\.(.*)
@@ -24,6 +21,8 @@ rabbitmq_version: 1\.19\.(.*)
 spring_cloud_services_version: 3\.1\.(.*)
 single_sign_on_version: 1\.12\.(.*)
 health_watch_version: 1\.8\.(.*)
+credhub_version: 1\.4\.(.*)
+metric_store_version: 1\.4.(.*)
 storage-backup-bucket: "tile-storage-bucket-bcbsma" 
 storage-endpoint: "s3.us-east-1.amazonaws.com"
 storage-access-key-id: ((s3-storage-access-key-id))
