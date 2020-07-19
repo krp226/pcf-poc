@@ -14,3 +14,4 @@ plan-3-name: large-node-three-plan
 plan-3-nodes: 3
 service-network: pcf-services
 ondeamd-network: pcf-ondemand
+azs: [us-east-1a, us-east-1b, us-east-1c]
