@@ -12,7 +12,8 @@ product-properties:
   .properties.backups_selector.s3.access_key_id:
     value: ((access-key-id))
   .properties.backups_selector.s3.aws_secret_access_key:
-    secret: ((secret-access-key))
+    value: 
+      secret: ((secret-access-key))
   .properties.backups_selector.s3.bg_save_timeout:
     value: 10
   .properties.backups_selector.s3.bucket_name:
