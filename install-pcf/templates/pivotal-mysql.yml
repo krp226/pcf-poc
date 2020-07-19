@@ -41,7 +41,6 @@ product-properties:
   .properties.mysql_metrics_frequency:
     value: 30
   .properties.plan1_selector:
-    selected_option: ((plan1-type))
     value: ((plan1-type))
   .properties.plan1_selector.single_node.access_dropdown:
     value: enable
@@ -54,7 +53,6 @@ product-properties:
   .properties.plan1_selector.single_node.paid_plan:
     value: false
   .properties.plan2_selector:
-    selected_option: ((plan2-type))
     value: ((plan2-type))
   .properties.plan2_selector.leader_follower.access_dropdown:
     value: enable
@@ -67,7 +65,6 @@ product-properties:
   .properties.plan2_selector.leader_follower.paid_plan:
     value: false
   .properties.plan3_selector:
-    selected_option: ((plan3-type))
     value: ((plan3-type))
   .properties.plan3_selector.galera.access_dropdown:
     value: enable
