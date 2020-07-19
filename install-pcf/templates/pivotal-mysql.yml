@@ -10,7 +10,7 @@ product-properties:
   .properties.backups_selector.s3.bucket_name:
     value: ((backup-bucket))
   .properties.backups_selector.s3.cron_schedule:
-    value: ((backup-cron_schedule))
+    value: ((backup-cron-schedule))
   .properties.backups_selector.s3.enable_email_alerts:
     value: false
   .properties.backups_selector.s3.endpoint_url:
