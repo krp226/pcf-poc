@@ -35,7 +35,7 @@ product-properties:
     value: 30
   .properties.plan_collection:
     value:
-    - az_multi_select: ((az-configuration))
+    - az_multi_select: ((azs))
       cf_service_access: enable
       configured_plan_id: null
       description: ((small-plan-description))
@@ -47,7 +47,7 @@ product-properties:
       tcp_keepalive: 60
       timeout: 3600
       vm_type: ((small-plan-vm))
-    - az_multi_select: ((az-configuration))
+    - az_multi_select: ((azs))
       cf_service_access: enable
       configured_plan_id: null
       description: ((medium-plan-description))
@@ -59,7 +59,7 @@ product-properties:
       tcp_keepalive: 60
       timeout: 3600
       vm_type: ((medium-plan-vm))
-    - az_multi_select: ((az-configuration))
+    - az_multi_select: ((azs))
       cf_service_access: enable
       configured_plan_id: null
       description: ((large-plan-description)) 

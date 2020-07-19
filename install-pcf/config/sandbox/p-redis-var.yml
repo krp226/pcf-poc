@@ -10,17 +10,17 @@ az-configuration:
 singleton-az: us-east-1a
 small-plan-description: This plan provides a test on-demand Redis instance, tailored for caching use-cases with persistence to disk enabled
 small-plan-name: small-on-demand-cache
-small-plan-vm: t2.micro
-small-plan-disk: "2 G"
+small-plan-vm: t3.micro
+small-plan-disk: "2048"
 medium-plan-description: This plan provides a test on-demand Redis instance, tailored for caching use-cases with persistence to disk enabled
 medium-plan-name: small-on-demand-cache
-medium-plan-vm: t2.micro
-medium-plan-disk: "2 G"
+medium-plan-vm: t3.micro
+medium-plan-disk: "2048"
 large-plan-description: This plan provides a test on-demand Redis instance, tailored for caching use-cases with persistence to disk enabled
 large-plan-name: small-on-demand-cache
-large-plan-vm: t2.micro
-large-plan-disk: "2 G"
+large-plan-vm: t3.micro
+large-plan-disk: "2048"
 service-network: pcf-services
 ondemand-network: pcf-ondemand
-
+azs: [ us-east-1a, us-east-1b, us-east-1c ]
 
