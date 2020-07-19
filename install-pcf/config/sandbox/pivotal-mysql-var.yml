@@ -5,7 +5,7 @@ backup-s3-end-point: https://s3.amazonaws.com
 backup-path: redisbackup
 backup-region: "us-east-1"
 email: kartheek.ramakrishna@perficient.com
-plan1-type: "single-node"
+plan1-type: "single_node"
 plan1-azs: [us-east-1a, us-east-1b, us-east-1c]
 plan1-description: "This plan provides a small dedicated MySQL instance."
 plan1-node-name: "db-small"
