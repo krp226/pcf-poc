@@ -38,7 +38,7 @@ product-properties:
   .properties.on_demand_broker_plan_1_paid:
     value: false
   .properties.on_demand_broker_plan_1_rabbitmq_az_placement:
-    value: ((az-configuration))
+    value: ((azs))
   .properties.on_demand_broker_plan_1_rabbitmq_cluster_partition_handling_strategy:
     value: pause_minority
   .properties.on_demand_broker_plan_1_rabbitmq_number_of_nodes:
@@ -64,7 +64,7 @@ product-properties:
   .properties.on_demand_broker_plan_2_selector.enabled.paid:
     value: false
   .properties.on_demand_broker_plan_2_selector.enabled.rabbitmq_az_placement:
-    value: ((az-configuration))
+    value: ((azs))
   .properties.on_demand_broker_plan_2_selector.enabled.rabbitmq_cluster_partition_handling_strategy:
     value: pause_minority
   .properties.on_demand_broker_plan_2_selector.enabled.rabbitmq_number_of_nodes:
@@ -90,7 +90,7 @@ product-properties:
   .properties.on_demand_broker_plan_3_selector.enabled.paid:
     value: false
   .properties.on_demand_broker_plan_3_selector.enabled.rabbitmq_az_placement:
-    value: ((az-configuration))
+    value: ((azs))
   .properties.on_demand_broker_plan_3_selector.enabled.rabbitmq_cluster_partition_handling_strategy:
     value: pause_minority
   .properties.on_demand_broker_plan_3_selector.enabled.rabbitmq_number_of_nodes:
