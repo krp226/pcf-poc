@@ -1,0 +1,348 @@
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+- name: artifactory
+  type: docker-image
+  source:
+    repository: pivotalservices/artifactory-resource
+
+resources:
+
+- name: platform-automation
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: platform-automation
+    product_version: ((platform_automation_version))
+    sort_by: semver
+
+- name: pcf-automation-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+
+- name: pcf-automation-template-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_template_uri))
+    branch: ((git_template_branch))
+
+- name: pipeline-utilities
+  type: git
+  source:
+    uri: https://github.com/pivotalservices/pipeline-utilities.git
+
+- name: xenial-stemcell
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    versioned_file: xenial_stemcells_ubuntu/((xenial-stemcell-name))
+
+- name: health-watch-stemcell
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    versioned_file: healthwatch_stemcells_ubuntu/((healthwatch-stemcell-name))
+
+jobs:
+- name: export-installtion-settings
+  serial: true
+  serial_groups: [ export-settings ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+        interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: create-env-file
+    file: pipeline-utilities/tasks/create-om-env.yml
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+  - task: export-installation-settings
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/export-installation.yml
+    input_mapping:
+      platform-automation-tasks: pcf-automation-tasks
+      env: auth
+    params:
+      ENV_FILE: auth.yml
+    ensure: &make-state-commit
+      do:
+        - task: make-commit
+          image: pcf-automation-image
+          input_mapping:
+            configuration: pcf-automation-git
+          config:
+            platform: linux
+            inputs:
+              - name: installation
+              - name: configuration
+            outputs:
+              - name: configuration-commit
+            run:
+              path: bash
+              args:
+                - -c
+                - |
+                  set -eux
+                  git clone -b ((git_branch)) configuration configuration-commit
+                  cp installation/installation*.zip configuration-commit/install-pcf/state/((foundation))/
+                  cd configuration-commit
+                  git add -A
+                  git config --global user.email "bot@example.com"
+                  git config --global user.name "Friendly Neighborhood Bot"
+                  git commit -m 'updated the state file' || true
+        - put: pcf-automation-git
+          params:
+            repository: configuration-commit
+            rebase: true
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+        interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: auth.yml
+    config:
+      platform: linux
+      inputs:
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env auth/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: add-xenial-stemcell
+  serial: true
+  serial_groups: [ add-stemcells ]
+  plan:
+  - aggregate:
+    - get: xenial-stemcell
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installtion-settings ]
+  - task: create-env-file
+    file: pipeline-utilities/tasks/create-env-file.yml
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+  - task: upload-stemcell
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-stemcell.yml
+    input_mapping:
+      stemcell: xenial-stemcell
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: add-health-watch-stemcell
+  serial: true
+  serial_groups: [ add-stemcells ]
+  plan:
+  - aggregate:
+    - get: health-watch-stemcell
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installtion-settings ]
+  - task: create-env-file
+    file: pipeline-utilities/tasks/create-env-file.yml
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+  - task: upload-stemcell
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-stemcell.yml
+    input_mapping:
+      stemcell: health-watch-stemcell
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: trigger-apply-changes
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ add-health-watch-stemcell ]
+  - task: create-env-file
+    file: pipeline-utilities/tasks/create-env-file.yml
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: apply-change-director
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/apply-changes.yml
+    input_mapping:
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions

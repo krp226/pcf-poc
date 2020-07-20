@@ -1734,9 +1734,9 @@ jobs:
       CREDHUB_SECRET: ((credhub_secret))
       CREDHUB_SERVER: ((credhub_server))
       PREFIX: /concourse/((foundation))
-  - task: apply-change-products
+  - task: apply-change-director
     image: pcf-automation-image
-    file: pcf-automation-tasks/tasks/apply-changes.yml
+    file: pcf-automation-tasks/tasks/apply-director-changes.yml
     input_mapping:
       platform-automation-tasks: pcf-automation-tasks
   - task: logout-of-opsmanger
