@@ -1,0 +1,27 @@
+---
+pivnet-api-token: ((pivnet_token)) 
+
+# Ops Manager credentials
+skip-ssl-validation: true
+opsman-url: https://10.65.16.8
+opsman-username: ((opsman-username))
+opsman-password: ((opsman-password))
+opsman-private-key: ((opsman-private-key.private_key))
+
+# S3-compatible bucket credentials
+storage-backup-bucket: "tile-storage-bucket-bcbsma"
+storage-region: us-east-1
+storage-endpoint: "s3.us-east-1.amazonaws.com"
+storage-access-key-id: ((s3-storage-access-key-id))
+storage-secret-access-key: ((s3-storage-secret-access-key))
+
+# bbr-pcf-pipeline-tasks pinned tag version
+#bbr-pipeline-tasks-repo-version: example-tag-v0.0.0
+
+# Git credentials
+git_private_key: ((git_keys.private_key))
+git_uri: "git@github.com:kartikeyavadlapatla/pcf-poc.git"
+git_branch: "master"
+git_template_uri: "git@github.com:kartikeyavadlapatla/pcf-templates.git"
+git_template_branch: "master"
+foundation: "sandbox"

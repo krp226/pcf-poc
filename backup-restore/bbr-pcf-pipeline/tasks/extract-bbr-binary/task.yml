@@ -1,0 +1,24 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: pcfplatformrecovery/bbr-pcf-pipeline-tasks
+    tag: final
+
+inputs:
+    # Contains the latest release of bbr from GitHub
+  - name: bbr-release
+
+outputs:
+    # Directory containing the bbr executable to use in other tasks
+  - name: binary
+
+run:
+  path: bash
+  args:
+  - -c
+  - |
+    tar -xvf bbr-release/bbr*.tar
+    cp releases/bbr binary/

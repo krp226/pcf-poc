@@ -1,0 +1,131 @@
+---
+opsman_credentials: &opsman_credentials
+  SKIP_SSL_VALIDATION: ((skip-ssl-validation))
+  OPSMAN_URL: ((opsman-url))
+  OPSMAN_USERNAME: ((opsman-username))
+  OPSMAN_PASSWORD: ((opsman-password))
+  OPSMAN_PRIVATE_KEY: ((opsman-private-key))
+
+s3_credentials: &s3_credentials
+  bucket: ((storage-backup-bucket))
+  region_name: ((storage-region))
+  access_key_id: ((storage-access-key-id))
+  secret_access_key: ((storage-secret-access-key))
+  endpoint: ((storage-endpoint))
+
+jobs:
+- name: export-om-installation
+  serial: true
+  plan:
+  - in_parallel:
+    - get: bbr-pipeline-tasks-repo
+    - get: after-hours-backup
+  - task: export-om-installation
+    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/export-om-installation/task.yml
+    params:
+      SKIP_SSL_VALIDATION: ((skip-ssl-validation))
+      OPSMAN_URL: ((opsman-url))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_PASSWORD: ((opsman-password))
+  - put: om-backup-artifact
+    params:
+      file: om-installation/installation_*.zip
+
+- name: bbr-backup-director
+  serial: true
+  plan:
+  - in_parallel:
+    - get: bbr-pipeline-tasks-repo
+      passed: [export-om-installation]
+    - get: bbr-release
+    - get: after-hours-backup
+      trigger: true
+  - task: check-opsman-status
+    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/check-opsman-status/task.yml
+    params:
+      <<: *opsman_credentials
+  - task: extract-binary
+    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/extract-bbr-binary/task.yml
+  - task: bbr-backup-director
+    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-backup-director/task.yml
+    params:
+      <<: *opsman_credentials
+    on_failure:
+      task: bbr-cleanup-director
+      file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-cleanup-director/task.yml
+      params:
+        <<: *opsman_credentials
+  - put: director-backup-bucket
+    params:
+      file: director-backup-artifact/director-backup_*.tar
+
+- name: bbr-backup-pas
+  serial: true
+  plan:
+  - in_parallel:
+    - get: bbr-pipeline-tasks-repo
+      passed: [bbr-backup-director]
+    - get: bbr-release
+    - get: after-hours-backup
+      trigger: true
+  - task: check-opsman-status
+    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/check-opsman-status/task.yml
+    params:
+      <<: *opsman_credentials
+  - task: extract-binary
+    tags:
+    - ((concourse-worker-tag))
+    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/extract-bbr-binary/task.yml
+  - task: bbr-backup-pas
+    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-backup-pas/task.yml
+    params:
+      <<: *opsman_credentials
+    on_failure:
+      task: bbr-cleanup-pas
+      file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-cleanup-pas/task.yml
+      params:
+        <<: *opsman_credentials
+  - put: pas-backup-bucket
+    params:
+      file: pas-backup-artifact/pas-backup_*.tar
+
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+- name: bbr-pipeline-tasks-repo
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+- name: om-backup-artifact
+  type: s3
+  source:
+    <<: *s3_credentials
+    regexp: installation_(.*).zip
+- name: pas-backup-bucket
+  type: s3
+  source:
+    <<: *s3_credentials
+    regexp: pas-backup_(.*).tar
+- name: director-backup-bucket
+  type: s3
+  source:
+    <<: *s3_credentials
+    regexp: director-backup_(.*).tar
+- name: bbr-release
+  type: pivnet
+  source:
+    api_token: ((pivnet-api-token))
+    product_slug: p-bosh-backup-and-restore
+- name: after-hours-backup
+  type: time
+  source:
+    start: ((start-time))
+    stop: ((stop-time))
+    location: America/New_York
