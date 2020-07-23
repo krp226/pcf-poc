@@ -13,7 +13,7 @@ inputs:
 outputs:
 
 run:
-  path: bbr-pipeline-tasks-repo/tasks/check-opsman-status/task.sh
+  path: bbr-pipeline-tasks-repo/backup-restore/tasks/check-opsman-status/task.sh
 
 params:
   # The Ops Manager URL, e.g. https://pcf.example.com

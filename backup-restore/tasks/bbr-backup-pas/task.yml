@@ -17,7 +17,7 @@ outputs:
   - name: pas-backup-artifact
 
 run:
-  path: bbr-pipeline-tasks-repo/tasks/bbr-backup-pas/task.sh
+  path: bbr-pipeline-tasks-repo/backup-restore/tasks/bbr-backup-pas/task.sh
 
 params:
   # The Ops Manager URL, e.g. https://pcf.example.com

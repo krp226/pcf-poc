@@ -13,7 +13,7 @@ inputs:
   - name: binary
 
 run:
-  path: bbr-pipeline-tasks-repo/tasks/bbr-cleanup-director/task.sh
+  path: bbr-pipeline-tasks-repo/backup-restore/tasks/bbr-cleanup-director/task.sh
 
 params:
   # The Ops Manager URL, e.g. https://pcf.example.com

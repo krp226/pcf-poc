@@ -17,7 +17,7 @@ outputs:
   - name: director-backup-artifact
 
 run:
-  path: bbr-pipeline-tasks-repo/tasks/bbr-backup-director/task.sh
+  path: bbr-pipeline-tasks-repo/backup-restore/tasks/bbr-backup-director/task.sh
 
 params:
   # The Ops Manager URL, e.g. https://pcf.example.com

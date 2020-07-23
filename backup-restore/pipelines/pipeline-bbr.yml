@@ -21,7 +21,9 @@ jobs:
     - get: bbr-pipeline-tasks-repo
     - get: after-hours-backup
   - task: export-om-installation
-    file: backup-restore/tasks/export-om-installation/task.yml
+    file: bbr-pipeline-tasks-repo/backup-restore/tasks/export-om-installation/task.yml
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
     params:
       SKIP_SSL_VALIDATION: ((skip-ssl-validation))
       OPSMAN_URL: ((opsman-url))
@@ -41,23 +43,33 @@ jobs:
     - get: after-hours-backup
       trigger: true
   - task: check-opsman-status
-    file: backup-restore/tasks/check-opsman-status/task.yml
+    file: bbr-pipeline-tasks-repo/backup-restore/tasks/check-opsman-status/task.yml
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
     params:
       <<: *opsman_credentials
   - task: extract-binary
-    file: backup-restore/tasks/extract-bbr-binary/task.yml
+    file: bbr-pipeline-tasks-repo/backup-restore/tasks/extract-bbr-binary/task.yml
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
   - task: bbr-backup-director
-    file: backup-restore/tasks/bbr-backup-director/task.yml
+    file: bbr-pipeline-tasks-repo/backup-restore/tasks/bbr-backup-director/task.yml
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
     params:
       <<: *opsman_credentials
     on_failure:
       task: bbr-cleanup-director
-      file: backup-restore/tasks/bbr-cleanup-director/task.yml
+      file: bbr-pipeline-tasks-repo/backup-restore/tasks/bbr-cleanup-director/task.yml
+      input_mapping:
+        bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
       params:
         <<: *opsman_credentials
   - put: director-backup-bucket
     params:
       file: director-backup-artifact/director-backup_*.tar
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
 
 - name: bbr-backup-pas
   serial: true
@@ -69,25 +81,33 @@ jobs:
     - get: after-hours-backup
       trigger: true
   - task: check-opsman-status
-    file: backup-restore/tasks/check-opsman-status/task.yml
+    file: bbr-pipeline-tasks-repo/backup-restore/tasks/check-opsman-status/task.yml
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
     params:
       <<: *opsman_credentials
   - task: extract-binary
-    tags:
-    - ((concourse-worker-tag))
-    file: backup-restore/tasks/extract-bbr-binary/task.yml
+    file: bbr-pipeline-tasks-repo/backup-restore/tasks/extract-bbr-binary/task.yml
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
   - task: bbr-backup-pas
-    file: backup-restore/tasks/bbr-backup-pas/task.yml
+    file: bbr-pipeline-tasks-repo/backup-restore/tasks/bbr-backup-pas/task.yml
+    input_mapping:
+      bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
     params:
       <<: *opsman_credentials
     on_failure:
       task: bbr-cleanup-pas
-      file: backup-restore/tasks/bbr-cleanup-pas/task.yml
+      file: bbr-pipeline-tasks-repo/backup-restore/tasks/bbr-cleanup-pas/task.yml
+      input_mapping:
+        bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
       params:
         <<: *opsman_credentials
   - put: pas-backup-bucket
     params:
       file: pas-backup-artifact/pas-backup_*.tar
+      input_mapping:
+        bbr-pipeline-tasks-repo: bbr-pipeline-tasks-repo
 
 resource_types:
 - name: pivnet
