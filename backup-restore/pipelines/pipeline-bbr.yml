@@ -21,7 +21,7 @@ jobs:
     - get: bbr-pipeline-tasks-repo
     - get: after-hours-backup
   - task: export-om-installation
-    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/export-om-installation/task.yml
+    file: backup-restore/tasks/export-om-installation/task.yml
     params:
       SKIP_SSL_VALIDATION: ((skip-ssl-validation))
       OPSMAN_URL: ((opsman-url))
@@ -41,18 +41,18 @@ jobs:
     - get: after-hours-backup
       trigger: true
   - task: check-opsman-status
-    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/check-opsman-status/task.yml
+    file: backup-restore/tasks/check-opsman-status/task.yml
     params:
       <<: *opsman_credentials
   - task: extract-binary
-    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/extract-bbr-binary/task.yml
+    file: backup-restore/tasks/extract-bbr-binary/task.yml
   - task: bbr-backup-director
-    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-backup-director/task.yml
+    file: backup-restore/tasks/bbr-backup-director/task.yml
     params:
       <<: *opsman_credentials
     on_failure:
       task: bbr-cleanup-director
-      file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-cleanup-director/task.yml
+      file: backup-restore/tasks/bbr-cleanup-director/task.yml
       params:
         <<: *opsman_credentials
   - put: director-backup-bucket
@@ -69,20 +69,20 @@ jobs:
     - get: after-hours-backup
       trigger: true
   - task: check-opsman-status
-    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/check-opsman-status/task.yml
+    file: backup-restore/tasks/check-opsman-status/task.yml
     params:
       <<: *opsman_credentials
   - task: extract-binary
     tags:
     - ((concourse-worker-tag))
-    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/extract-bbr-binary/task.yml
+    file: backup-restore/tasks/extract-bbr-binary/task.yml
   - task: bbr-backup-pas
-    file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-backup-pas/task.yml
+    file: backup-restore/tasks/bbr-backup-pas/task.yml
     params:
       <<: *opsman_credentials
     on_failure:
       task: bbr-cleanup-pas
-      file: bbr-pipeline-tasks-repo/backup-restore/bbr-pcf-pipeline-tasks/tasks/bbr-cleanup-pas/task.yml
+      file: backup-restore/tasks/bbr-cleanup-pas/task.yml
       params:
         <<: *opsman_credentials
   - put: pas-backup-bucket

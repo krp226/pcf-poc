@@ -1,6 +1,7 @@
 ---
 pivnet-api-token: ((pivnet_token)) 
-
+start-time: 10:00 AM
+stop-time: 1:00 AM
 # Ops Manager credentials
 skip-ssl-validation: true
 opsman-url: https://10.65.16.8
