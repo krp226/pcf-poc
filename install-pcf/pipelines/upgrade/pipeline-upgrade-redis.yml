@@ -100,7 +100,7 @@ jobs:
   - task: create-env-file
     file: pipeline-utilities/tasks/create-om-env.yml
     params:
-      OPSMAN_TARGET: ((opsman-private-ip))
+      OPSMAN_TARGET: ((opsman-target))
       OPSMAN_CONNECT_TIMEOUT: 1600
       OPSMAN_REQUEST_TIMEOUT: 600
       OPSMAN_SKIP_SSL_VALIDATION: true
@@ -197,7 +197,7 @@ jobs:
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
-      OPSMAN_TARGET: ((opsman-private-ip))
+      OPSMAN_TARGET: ((opsman-target))
       OPSMAN_CONNECT_TIMEOUT: 1600
       OPSMAN_REQUEST_TIMEOUT: 600
       OPSMAN_SKIP_SSL_VALIDATION: true
@@ -272,7 +272,7 @@ jobs:
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
-      OPSMAN_TARGET: ((opsman-private-ip))
+      OPSMAN_TARGET: ((opsman-target))
       OPSMAN_CONNECT_TIMEOUT: 1600
       OPSMAN_REQUEST_TIMEOUT: 600
       OPSMAN_SKIP_SSL_VALIDATION: true
@@ -365,7 +365,7 @@ jobs:
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
-      OPSMAN_TARGET: ((opsman-private-ip))
+      OPSMAN_TARGET: ((opsman-target))
       OPSMAN_CONNECT_TIMEOUT: 1600
       OPSMAN_REQUEST_TIMEOUT: 600
       OPSMAN_SKIP_SSL_VALIDATION: true

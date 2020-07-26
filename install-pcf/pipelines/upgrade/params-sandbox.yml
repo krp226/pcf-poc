@@ -26,7 +26,7 @@ pivnet-file-glob: "ops-manager-aws*.yml"
 pivnet-product-slug: ops-manager
 #product-version-regex: ^2\.5\.\d+$
 product-version-regex: 2.9.(.*)
-#opsman-target: 10.65.16.8
+opsman-target: opsman.sandbox.cps-prft.com
 opsman-username: ((opsman-username))
 opsman-password: ((opsman-password))
 opsman-decryption-passphrase: ((opsman-decryption-passphrase)) 
