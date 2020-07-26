@@ -1,10 +1,3 @@
-s3_credentials: &s3_credentials
-  bucket: ((storage-backup-bucket))
-  region_name: ((storage-region))
-  access_key_id: ((storage-access-key-id))
-  secret_access_key: ((storage-secret-access-key))
-  endpoint: ((storage-endpoint))
-
 resource_types:
 - name: pivnet
   type: docker-image
@@ -18,11 +11,6 @@ resource_types:
     repository: pivotalservices/artifactory-resource
 
 resources:
-- name: om-backup-artifact
-  type: s3
-  source:
-    <<: *s3_credentials
-    regexp: opsman-export/installation-(.*).zip
 
 - name: platform-automation
   type: pivnet
@@ -58,7 +46,7 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
-    regexp: xenial_stemcells_ubuntu/((xenial-stemcell-name))
+    versioned_file: xenial_stemcells_ubuntu/((xenial-stemcell-name))
 
 - name: health-watch-stemcell
   type: s3
@@ -67,12 +55,12 @@ resources:
     bucket: ((storage-backup-bucket))
     region_name: us-east-1
     secret_access_key: ((sandbox-secret-access-key))
-    regexp: healthwatch_stemcells_ubuntu/((healthwatch-stemcell-name))
+    versioned_file: healthwatch_stemcells_ubuntu/((healthwatch-stemcell-name))
 
 jobs:
-- name: export-installation-settings
+- name: export-installtion-settings
   serial: true
-  serial_groups: [ opsman ]
+  serial_groups: [ export-settings ]
   plan:
   - aggregate:
     - get: pcf-automation-tasks
@@ -108,35 +96,13 @@ jobs:
   - task: create-env-file
     file: pipeline-utilities/tasks/create-om-env.yml
     params:
-      OPSMAN_TARGET: ((opsman-private-ip))
+      OPSMAN_TARGET: ((opsman-target))
       OPSMAN_CONNECT_TIMEOUT: 1600
       OPSMAN_REQUEST_TIMEOUT: 600
       OPSMAN_SKIP_SSL_VALIDATION: true
       OPSMAN_USERNAME: ((opsman-username))
       OPSMAN_PASSWORD: ((opsman-password))
       OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
-  - task: check-opsman-status
-    image: pcf-automation-image
-    params:
-      ENV_FILE: auth.yml
-    config:
-      platform: linux
-      inputs:
-      - name: auth 
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            set -eux
-            apt install jq -y
-            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
-            trimmed_status="$(xargs <<< "$status")"
-            if [ "$trimmed_status" == "running" ]; then
-              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
-              exit 1
-            fi
-            echo "No \"Apply Changes\" in flight."
   - task: export-installation-settings
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/export-installation.yml
@@ -145,9 +111,36 @@ jobs:
       env: auth
     params:
       ENV_FILE: auth.yml
-  - put: om-backup-artifact
-    params:
-      file: installation/installation-*.zip
+    ensure: &make-state-commit
+      do:
+        - task: make-commit
+          image: pcf-automation-image
+          input_mapping:
+            configuration: pcf-automation-git
+          config:
+            platform: linux
+            inputs:
+              - name: installation
+              - name: configuration
+            outputs:
+              - name: configuration-commit
+            run:
+              path: bash
+              args:
+                - -c
+                - |
+                  set -eux
+                  git clone -b ((git_branch)) configuration configuration-commit
+                  cp installation/installation*.zip configuration-commit/install-pcf/state/((foundation))/
+                  cd configuration-commit
+                  git add -A
+                  git config --global user.email "bot@example.com"
+                  git config --global user.name "Friendly Neighborhood Bot"
+                  git commit -m 'updated the state file' || true
+        - put: pcf-automation-git
+          params:
+            repository: configuration-commit
+            rebase: true
   - task: credhub-interpolate
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/credhub-interpolate.yml
@@ -201,7 +194,7 @@ jobs:
     - get: pcf-automation-git
     - get: pcf-automation-template-git
     - get: pipeline-utilities
-      passed: [export-installation-settings]
+      passed: [ export-installtion-settings ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
@@ -212,28 +205,6 @@ jobs:
       OPSMAN_USERNAME: ((opsman-username))
       OPSMAN_PASSWORD: ((opsman-password))
       OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
-  - task: check-opsman-status
-    image: pcf-automation-image
-    params:
-      ENV_FILE: env.yml
-    config:
-      platform: linux
-      inputs:
-      - name: env
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            set -eux
-            apt install jq -y
-            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
-            trimmed_status="$(xargs <<< "$status")"
-            if [ "$trimmed_status" == "running" ]; then
-              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
-              exit 1
-            fi
-            echo "No \"Apply Changes\" in flight."
   - task: upload-stemcell
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/upload-stemcell.yml
@@ -278,39 +249,17 @@ jobs:
     - get: pcf-automation-git
     - get: pcf-automation-template-git
     - get: pipeline-utilities
-      passed: [export-installation-settings]
+      passed: [ export-installtion-settings ]
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
-      OPSMAN_TARGET: ((opsman-private-ip))
+      OPSMAN_TARGET: ((opsman-target))
       OPSMAN_CONNECT_TIMEOUT: 1600
       OPSMAN_REQUEST_TIMEOUT: 600
       OPSMAN_SKIP_SSL_VALIDATION: true
       OPSMAN_USERNAME: ((opsman-username))
       OPSMAN_PASSWORD: ((opsman-password))
       OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
-  - task: check-opsman-status
-    image: pcf-automation-image
-    params:
-      ENV_FILE: env.yml
-    config:
-      platform: linux
-      inputs:
-      - name: env
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            set -eux
-            apt install jq -y
-            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
-            trimmed_status="$(xargs <<< "$status")"
-            if [ "$trimmed_status" == "running" ]; then
-              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
-              exit 1
-            fi
-            echo "No \"Apply Changes\" in flight."
   - task: upload-stemcell
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/upload-stemcell.yml
@@ -355,7 +304,7 @@ jobs:
   - task: create-env-file
     file: pipeline-utilities/tasks/create-env-file.yml
     params:
-      OPSMAN_TARGET: ((opsman-private-ip))
+      OPSMAN_TARGET: ((opsman-target))
       OPSMAN_CONNECT_TIMEOUT: 1600
       OPSMAN_REQUEST_TIMEOUT: 600
       OPSMAN_SKIP_SSL_VALIDATION: true
@@ -377,43 +326,11 @@ jobs:
       CREDHUB_SECRET: ((credhub_secret))
       CREDHUB_SERVER: ((credhub_server))
       PREFIX: /concourse/((foundation))
-  - task: check-opsman-status
+  - task: apply-change-director
     image: pcf-automation-image
-    params:
-      ENV_FILE: env.yml
-    config:
-      platform: linux
-      inputs:
-      - name: env
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            set -eux
-            apt install jq -y
-            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
-            trimmed_status="$(xargs <<< "$status")"
-            if [ "$trimmed_status" == "running" ]; then
-              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
-              exit 1
-            fi
-            echo "No \"Apply Changes\" in flight."
-  - task: apply-change
-    image: pcf-automation-image
-    params:
-      ENV_FILE: env.yml
-    config:
-      platform: linux
-      inputs:
-      - name: env
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            set -ex
-            om --env env/"${ENV_FILE}" apply-changes 
+    file: pcf-automation-tasks/tasks/apply-changes.yml
+    input_mapping:
+      platform-automation-tasks: pcf-automation-tasks
   - task: logout-of-opsmanger
     image: pcf-automation-image
     params:

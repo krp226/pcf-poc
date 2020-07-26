@@ -98,28 +98,6 @@ jobs:
       OPSMAN_USERNAME: ((opsman-username))
       OPSMAN_PASSWORD: ((opsman-password))
       OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
-  - task: check-opsman-status
-    image: pcf-automation-image
-    params:
-      ENV_FILE: auth.yml
-    config:
-      platform: linux
-      inputs:
-      - name: auth 
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            set -eux
-            apt install jq -y
-            status="$(om --env auth/"${ENV_FILE}" installations --format json | jq .[0].status)"
-            trimmed_status="$(xargs <<< "$status")"
-            if [ "$trimmed_status" == "running" ]; then
-              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
-              exit 1
-            fi
-            echo "No \"Apply Changes\" in flight."
   - task: export-installation-settings
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/export-installation.yml
@@ -128,6 +106,36 @@ jobs:
       env: auth
     params:
       ENV_FILE: auth.yml
+#    ensure: &make-state-commit
+#      do:
+#        - task: make-commit
+#          image: pcf-automation-image
+#          input_mapping:
+#            configuration: pcf-automation-git
+#          config:
+#            platform: linux
+#            inputs:
+#              - name: installation
+#              - name: configuration
+#            outputs:
+#              - name: configuration-commit
+#            run:
+#              path: bash
+#              args:
+#                - -c
+#                - |
+#                  set -eux
+#                  git clone -b ((git_branch)) configuration configuration-commit
+#                  cp installation/installation*.zip configuration-commit/install-pcf/state/((foundation))/
+#                  cd configuration-commit
+#                  git add -A
+#                  git config --global user.email "bot@example.com"
+#                  git config --global user.name "Friendly Neighborhood Bot"
+#                  git commit -m 'updated the state file' || true
+#        - put: pcf-automation-git
+#          params:
+#            repository: configuration-commit
+#            rebase: true
   - put: om-backup-artifact
     params:
       file: installation/installation-*.zip

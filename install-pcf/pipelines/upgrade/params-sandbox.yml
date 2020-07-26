@@ -26,13 +26,10 @@ pivnet-file-glob: "ops-manager-aws*.yml"
 pivnet-product-slug: ops-manager
 #product-version-regex: ^2\.5\.\d+$
 product-version-regex: 2.9.(.*)
-opsman-target: 10.65.16.8
+#opsman-target: 10.65.16.8
 opsman-username: ((opsman-username))
 opsman-password: ((opsman-password))
 opsman-decryption-passphrase: ((opsman-decryption-passphrase)) 
-#saml-idp-metadata: <?xml version="1.0" encoding="UTF-8" standalone="no"?><md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://accounts.google.com/o/saml2?idpid=C0203b6kt" validUntil="2025-07-10T03:32:32.000Z"><md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol"><md:KeyDescriptor use="signing"><ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509Data><ds:X509Certificate>MIIDdDCCAlygAwIBAgIGAXM77oL9MA0GCSqGSIb3DQEBCwUAMHsxFDASBgNVBAoTC0dvb2dsZSBJbmMuMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MQ8wDQYDVQQDEwZHb29nbGUxGDAWBgNVBAsTD0dvb2dsZSBGb3IgV29yazELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEwHhcNMjAwNzExMDMzMjMyWhcNMjUwNzEwMDMzMjMyWjB7MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEPMA0GA1UEAxMGR29vZ2xlMRgwFgYDVQQLEw9Hb29nbGUgRm9yIFdvcmsxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn7P4l69SUanu7lHKommGyhByBA1ojRpq65CAV3I6tnCjNtsnvOSFHLNERX9Eed6HHyfggtj4zaOm+BxRDg3+MW4A6o9KqPalY8PEwr7sOjcV0+ygYDlMa6PMpBuQ+cL9tTC6zzc0WmjneciBn9Hch96LYCDiw+3ZRmc4PsXj3ngwbRKXWCAR9LdRXcJzMy+Qg2uj5+A5NtVEaa38stxSaBKz+P3dkczXekvjf9QX4yHkaf6SMm6lgZliAHyfgZbBP6nYhF96Mg243rrEPiVy9zMq1COSHcUxrTJK7TkQ/B+USpsg8GhKmFkTWaRPv2oA+cI7wIayCp+jWV7iXF0PmQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAjvrgiGcTC16o3S8WlwLD995M6jNYPQ6InjyM5YvZTTkhpRwoyUxfhyzcIJrZmFxMLIFEoVaw+dY3yU8CdvzN3mqUjnjblLQQqjQ7007/jqGjRs1w3P1U+VZvDY9czMs9oKpTN3ZLHpwJbPRfgiTleKsx6FqOTY5vtARHqWi70cJI8MbiKfRyYyiv3m9gZ7WEF+c0e2WNt5v9cDTfXzCSuAcireDBTTYEXt+GJSZeaWsJM5OfzYxOHWH4NhSdlbHsUo7iA1HbrpAG0aVhCgdivgVbKAJZMGIhJ3O7MAivvmAmsPepZApgDAJ+X7ERsAXDsb4TFNzO6zXDwFCsI1at4</ds:X509Certificate></ds:X509Data></ds:KeyInfo></md:KeyDescriptor><md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat><md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://accounts.google.com/o/saml2/idp?idpid=C0203b6kt"/><md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://accounts.google.com/o/saml2/idp?idpid=C0203b6kt"/></md:IDPSSODescriptor></md:EntityDescriptor> 
-#saml-rbac-groups-attribute: mail
-#saml-admin-group: pcf-admins
 precreated-client-secret: ((opsman-decryption-passphrase))
 storage-backup-bucket: "tile-storage-bucket-bcbsma"
 storage-access-key-id: ((s3-storage-access-key-id))
@@ -48,3 +45,11 @@ mysqlv2-tile-name: pivotal-mysql-2.8.(.*)
 rabbitmq-tile-name: p-rabbitmq-1.19.(.*)
 metric-tile-name: app-metrics-2.0.(.*)
 credhub-tile-name: credhub-service-broker-1.4.(.*)
+metric-store-tile-name: metric-store-1.4.(.*)
+# S3-compatible bucket credentials
+storage-backup-bucket: "tile-storage-bucket-bcbsma"
+storage-region: us-east-1
+storage-endpoint: "s3.us-east-1.amazonaws.com"
+storage-access-key-id: ((s3-storage-access-key-id))
+storage-secret-access-key: ((s3-storage-secret-access-key))
+
