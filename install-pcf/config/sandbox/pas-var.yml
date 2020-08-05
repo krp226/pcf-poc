@@ -20,3 +20,19 @@ backup-droplet-bucket: sandbox-backup-droplet-bucket-bcbsma-n
 backup-package-bucket: sandbox-backup-package-bucket-bcbsma-n
 buckets-s3-endpoint: https://s3.us-east-1.amazonaws.com
 buckets-s3-region: us-east-1
+elb-target-gp-web:
+- alb:sandbox-web-tg-443
+- alb:sandbox-web-tg-443
+elb-target-gp-ssh:
+- alb:sandbox-ssh-tg
+elb-target-gp-tcp:
+- alb:sandbox-tcp-tg-1024
+- alb:sandbox-tcp-tg-1025
+- alb:sandbox-tcp-tg-1026
+- alb:sandbox-tcp-tg-1027
+- alb:sandbox-tcp-tg-1028
+- alb:sandbox-tcp-tg-1029
+- alb:sandbox-tcp-tg-1030
+- alb:sandbox-tcp-tg-1031
+- alb:sandbox-tcp-tg-1032
+- alb:sandbox-tcp-tg-1033

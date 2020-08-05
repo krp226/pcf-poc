@@ -345,3 +345,13 @@ network-properties:
   other_availability_zones: ((az-configuration))
   singleton_availability_zone:
     name: ((singleton-az))
+resource-config:
+  router:
+    elb_names: ((elb-target-gp-web))
+  diego_brain:
+    max_in_flight: 1
+    additional_networks: []
+    additional_vm_extensions: []
+    elb_names: ((elb-target-gp-ssh))
+  tcp_router:
+    elb_names: ((elb-target-gp-tcp))
