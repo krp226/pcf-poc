@@ -347,11 +347,11 @@ network-properties:
     name: ((singleton-az))
 resource-config:
   router:
+    additional_vm_extensions: ((elb-web-sg))
     elb_names: ((elb-target-gp-web))
   diego_brain:
-    max_in_flight: 1
-    additional_networks: []
-    additional_vm_extensions: []
+    additional_vm_extensions: ((elb-tcp-sg)) 
     elb_names: ((elb-target-gp-ssh))
   tcp_router:
+    additional_vm_extensions: ((elb-tcp-sg))
     elb_names: ((elb-target-gp-tcp))

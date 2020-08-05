@@ -36,3 +36,9 @@ elb-target-gp-tcp:
 - alb:sandbox-tcp-tg-1031
 - alb:sandbox-tcp-tg-1032
 - alb:sandbox-tcp-tg-1033
+elb-web-sg:
+- sg-00aa8fbe578f6c382
+elb-ssh-sg:
+- sg-06308bff25b03fe2c
+elb-tcp-sg:
+- sg-099e88f7bdd7b9fe4
