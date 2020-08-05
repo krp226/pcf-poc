@@ -37,8 +37,8 @@ elb-target-gp-tcp:
 - alb:sandbox-tcp-tg-1032
 - alb:sandbox-tcp-tg-1033
 elb-web-sg:
-- pcf-web-elb-security-group
+- web-lb-security-groups
 elb-ssh-sg:
-- pcf-ssh-elb-security-group
+- ssh-lb-security-groups
 elb-tcp-sg:
-- pcf-tcp-elb-security-group
+- tcp-lb-security-groups
