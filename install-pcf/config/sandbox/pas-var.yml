@@ -22,7 +22,7 @@ buckets-s3-endpoint: https://s3.us-east-1.amazonaws.com
 buckets-s3-region: us-east-1
 elb-target-gp-web:
 - alb:sandbox-web-tg-443
-- alb:sandbox-web-tg-443
+- alb:sandbox-web-tg-80
 elb-target-gp-ssh:
 - alb:sandbox-ssh-tg
 elb-target-gp-tcp:
