@@ -350,7 +350,7 @@ resource-config:
     additional_vm_extensions: ((elb-web-sg))
     elb_names: ((elb-target-gp-web))
   diego_brain:
-    additional_vm_extensions: ((elb-tcp-sg)) 
+    additional_vm_extensions: ((elb-ssh-sg)) 
     elb_names: ((elb-target-gp-ssh))
   tcp_router:
     additional_vm_extensions: ((elb-tcp-sg))
