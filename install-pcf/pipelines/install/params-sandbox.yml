@@ -22,6 +22,10 @@ opsman-security-group-id: "sg-0af7ad7d1f823d4b7"
 opsman-iam-instance-profile: "concourse-opsman-iam"
 opsman-root-VolumeSize: "150"
 opsman-private-ip: "10.65.16.8"
+web-ld-sg: "sg-00aa8fbe578f6c382"
+ssh-ld-sg: "sg-06308bff25b03fe2c"
+tcp-ld-sg: "sg-099e88f7bdd7b9fe4"
+vm-sg: "sg-0f9fd8575e4180dce"
 pivnet-file-glob: "ops-manager-aws*.yml"
 pivnet-product-slug: ops-manager
 #product-version-regex: ^2\.5\.\d+$

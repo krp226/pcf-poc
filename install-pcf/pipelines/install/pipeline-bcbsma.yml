@@ -371,6 +371,32 @@ jobs:
         vars/creds.yml
         config/install-pcf/config/((foundation))/bosh-director-var.yml
       DIRECTOR_CONFIG_FILE: install-pcf/templates/bosh-director.yml
+  - task: om-config-sgs
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+      foundation: ((foundation))
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            if [ ${foundation} == sandbox ]
+            then
+              om --env env/"${ENV_FILE}" curl --path /api/v0/staged/vm_extensions/web-lb-security-groups -x PUT -d \
+              '{"name": "web-lb-security-groups", "cloud_properties": { "security_groups": ["sg-00aa8fbe578f6c382", "sg-0f9fd8575e4180dce"]}}'
+              om --env env/"${ENV_FILE}" curl --path /api/v0/staged/vm_extensions/ssh-lb-security-groups -x PUT -d \
+              '{"name": "ssh-lb-security-groups", "cloud_properties": { "security_groups": ["sg-06308bff25b03fe2c", "sg-0f9fd8575e4180dce"]}}'
+              om --env env/"${ENV_FILE}" curl --path /api/v0/staged/vm_extensions/tcp-lb-security-groups -x PUT -d \
+              '{"name": "tcp-lb-security-groups", "cloud_properties": { "security_groups": ["sg-099e88f7bdd7b9fe4", "sg-0f9fd8575e4180dce"]}}'
+             else
+               echo "non foundation specified"
+             fi
   - task: apply-change-director
     image: pcf-automation-image
     file: pcf-automation-tasks/tasks/apply-director-changes.yml
