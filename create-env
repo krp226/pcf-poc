@@ -1,0 +1,33 @@
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cat env/env.yml
