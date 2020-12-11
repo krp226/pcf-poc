@@ -1,0 +1,12 @@
+---
+platform: linux
+
+inputs:
+  - name: code-repo 
+  - name: generated-versions
+
+outputs: 
+  - name: generated-html
+
+run:
+  path: code-repo/bbr/custom-tasks/versions/html-task.sh

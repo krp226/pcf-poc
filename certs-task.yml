@@ -1,0 +1,21 @@
+---
+platform: linux
+
+inputs:
+  - name: code-repo 
+  - name: generated-versions
+  - name: om-cli
+  - name: pivnet-cli
+  - name: jq
+
+outputs: 
+  - name: generated-html
+
+run:
+  path: code-repo/bbr/custom-tasks/versions/certs-task.sh
+
+params:
+  OPSMAN_URL:
+  OPSMAN_USERNAME:
+  OPSMAN_PASSWORD:
+  ZSCALER_CERT:

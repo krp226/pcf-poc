@@ -1,0 +1,25 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: sandyg1/om-cred-auto
+inputs:
+  - name: code-repo
+  - name: om-cli
+  - name: pivnet-cli
+  - name: jq
+
+outputs: 
+  - name: generated-versions
+
+run:
+  path: code-repo/bbr/custom-tasks/versions/task.sh
+
+params:
+  SKIP_SSL_VALIDATION: false
+  OPSMAN_URL:
+  OPSMAN_USERNAME:
+  OPSMAN_PASSWORD:
+  PIVNET_API_TOKEN:
+  ZSCALER_CERT:
