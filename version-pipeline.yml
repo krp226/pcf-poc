@@ -8,7 +8,7 @@ resources:
 - name: code-repo
   type: git
   source:
-    uri: git@ssh.dev.azure.com:v3/humana/DevOps/pcf_automation
+    uri: 
     branch: dev
     private_key: ((git_keys.private_key))
 - name: schedule
