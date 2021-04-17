@@ -1,0 +1,17 @@
+---
+platform: linux
+
+inputs:
+- name: buildpack
+- name: pcf-automation-git
+
+params:
+  CF_API_URI:
+  CF_USERNAME:
+  CF_PASSWORD:
+  BUILDPACK_NAME:
+  STACKS:
+
+run:
+  path: /bin/bash
+  args: ["./pcf-automation-git/update-buildpacks/tasks/java-add-buildpack.sh"]
