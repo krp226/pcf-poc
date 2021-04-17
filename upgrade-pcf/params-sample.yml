@@ -1,0 +1,80 @@
+---
+pivnet_token: ((pivnet_token))
+platform_automation_version: 4.4.3
+
+#####......######
+git_private_key: ((git_keys.private_key))
+git_uri: ""
+git_branch: "master"
+git_template_uri: ""
+git_template_branch: "master"
+
+#####......######
+foundation: "sandbox"
+
+#####......######
+credhub_ca_cert: ((credhub_ca_cert.certificate))
+credhub_client: "credhub_admin"
+credhub_secret: ((credhub_secret))
+credhub_server: ((credhub_server))
+
+#####......######
+ec2-create-access-key: ((ec2-create-access-key))
+ec2-create-secret-key: ((ec2-create-secret-key))
+access-key-id: ((sandbox-access-key-id))
+secret-access-key: ((sandbox-secret-access-key))
+aws-region: "us-east-2"
+
+#####......######
+opsman-subnet-id: ""
+opsman-image-id: "ami-03be4e51778844cd3"
+opsman-instance-type: "m5.large"
+opsman-ssh-key-name: ""
+opsman-security-group-id: ""
+opsman-iam-instance-profile: ""
+opsman-root-VolumeSize: "150"
+opsman-private-ip: ""
+kms-key: ""
+
+#####......######
+pivnet-file-glob: "ops-manager-aws*.yml"
+pivnet-product-slug: ops-manager
+product-version-regex: 2.10.1
+opsman-target: 
+opsman-username: ((opsman-username))
+opsman-password: ((opsman-password))
+opsman-decryption-passphrase: ((opsman-decryption-passphrase)) 
+
+#####......######
+storage-backup-bucket: ""
+storage-access-key-id: ((s3-storage-access-key-id))
+storage-secret-access-key: ((s3-storage-secret-access-key))
+storage-endpoint: "s3.us-east-1.amazonaws.com"
+#installation-file: "installation-20210106.1658.12+UTC.zip_moved_moved_moved_moved_moved"
+installation-file: "installation-20210326.1632.23+UTC.zip_moved"
+#####......######
+pas-tile-name: "cf-2.10.11-build.25.pivotal"
+springcloud-tile-name: "p_spring-cloud-services-3.1.19.pivotal"
+healthwatch-tile-name: "p-healthwatch-1.8.4-build.6.pivotal"
+redis-tile-name: "p-redis-2.3.3-build.2.pivotal"
+mysqlv2-tile-name: "pivotal-mysql-2.10.2-build.16.pivotal"
+rabbitmq-tile-name: "p-rabbitmq-1.19.1-build.22.pivotal"
+metric-tile-name: "app-metrics-2.0.5-build.6.pivotal"
+credhub-tile-name: "credhub-service-broker-1.5.0.pivotal"
+metric-store-tile-name: "metric-store-1.5.2-1612200380.pivotal"
+aws-service-broker-tile-name: "aws-service-broker-1.0.2-tile.pivotal"
+datadog-cluster-tile-name: "datadog-4.4.0.pivotal"
+datadog-application-tile-name: "datadog-application-monitoring-1.20.0.pivotal"
+
+# S3-compatible bucket credentials for storing Opsman export
+opsman-storage-backup-bucket: ""
+opsman-storage-region: us-east-2
+opsman-storage-endpoint: "s3.us-east-2.amazonaws.com"
+opsman-storage-access-key-id: ((access-key-id))
+opsman-storage-secret-access-key: ((secret-access-key))
+
+###Polling from S3#####
+#xenial-stemcell-name: light-bosh-stemcell-621.(.*)
+#healthwatch-stemcell-name: light-bosh-stemcell-456.(.*)
+xenial-stemcell-name: light-bosh-stemcell-621.117-(.*)
+healthwatch-stemcell-name: light-bosh-stemcell-456.154-(.*)
