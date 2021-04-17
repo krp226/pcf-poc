@@ -1,0 +1,1793 @@
+s3_credentials: &s3_credentials
+  bucket: ((opsman-storage-backup-bucket))
+  region_name: ((opsman-storage-region))
+  access_key_id: ((opsman-storage-access-key-id))
+  secret_access_key: ((opsman-storage-secret-access-key))
+  endpoint: ((opsman-storage-endpoint))
+
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+- name: artifactory
+  type: docker-image
+  source:
+    repository: pivotalservices/artifactory-resource
+
+resources:
+- name: om-backup-artifact
+  type: s3
+  source:
+    <<: *s3_credentials
+    regexp: opsman-export/installation-(.*).zip
+
+- name: platform-automation
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: platform-automation
+    product_version: ((platform_automation_version))
+    sort_by: semver
+
+- name: pcf-automation-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+
+- name: pcf-automation-template-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_template_uri))
+    branch: ((git_template_branch))
+
+- name: pipeline-utilities
+  type: git
+  source:
+    uri: https://github.com/pivotalservices/pipeline-utilities.git
+
+- name: metrics-product
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    #regexp: metrics_tiles/((metric-tile-name))
+    versioned_file: metrics_tiles/((metric-tile-name))
+
+- name: healthwatch-product
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    #regexp: health_watch_tiles/((healthwatch-tile-name))
+    versioned_file: health_watch_tiles/((healthwatch-tile-name))
+
+- name: credhub-product
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    #regexp: credhub_tiles/((credhub-tile-name))
+    versioned_file: credhub_tiles/((credhub-tile-name))
+
+- name: metrics-store-product
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    #regexp: metrics_store_tiles/((metric-store-tile-name))
+    versioned_file: metrics_store_tiles/((metric-store-tile-name))
+
+- name: datadog-cluster-product
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    #regexp: metrics_store_tiles/((metric-store-tile-name))
+    versioned_file: datadog_cluster_monitoring_tiles/((datadog-cluster-tile-name))
+
+- name: datadog-application-product
+  type: s3
+  source:
+    access_key_id: ((access-key-id))
+    bucket: ((storage-backup-bucket))
+    region_name: us-east-1
+    secret_access_key: ((sandbox-secret-access-key))
+    #regexp: metrics_store_tiles/((metric-store-tile-name))
+    versioned_file: datadog_application_monitoring_tiles/((datadog-application-tile-name))
+
+jobs:
+- name: export-installation-settings
+  serial: true
+  serial_groups: [ export-settings ]
+  plan:
+  - aggregate:
+    - get: om-backup-artifact
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+        interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: auth.yml
+    config:
+      platform: linux
+      inputs:
+      - name: auth 
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env auth/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: export-installation-settings
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/export-installation.yml
+    input_mapping:
+      platform-automation-tasks: pcf-automation-tasks
+      env: auth
+    params:
+      ENV_FILE: auth.yml
+  - put: om-backup-artifact
+    params:
+      file: installation/installation-*.zip
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+        interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: auth.yml
+    config:
+      platform: linux
+      inputs:
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env auth/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+
+- name: upload-and-stage-datadog-application-monitoring
+  serial: true
+  serial_groups: [ create-datadog-application-monitoring ]
+  plan:
+  - aggregate:
+    - get: datadog-application-product
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installation-settings ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: upload-and-stage-datadog-application-monitoring
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      product: datadog-application-product
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: upload-and-stage-health-watch
+  serial: true
+  serial_groups: [ create-health-watch ]
+  plan:
+  - aggregate:
+    - get: healthwatch-product
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installation-settings ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: upload-and-stage-healthwatch
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      product: healthwatch-product
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: upload-and-stage-credhub
+  serial: true
+  serial_groups: [ create-credhub ]
+  plan:
+  - aggregate:
+    - get: credhub-product
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installation-settings ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: upload-and-stage-credhub
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      product: credhub-product
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: upload-and-stage-metrics
+  serial: true
+  serial_groups: [ create-metrics ]
+  plan:
+  - aggregate:
+    - get: metrics-product
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installation-settings ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: upload-and-stage-metrics
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      product: metrics-product
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: upload-and-stage-metrics-store
+  serial: true
+  serial_groups: [ create-store ]
+  plan:
+  - aggregate:
+    - get: metrics-store-product
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installation-settings ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: upload-and-stage-metrics
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      product: metrics-store-product
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+
+- name: upload-and-stage-datadog-cluster-monitoring
+  serial: true
+  serial_groups: [ create-datadog-cluster-monitoring ]
+  plan:
+  - aggregate:
+    - get: datadog-cluster-product
+      trigger: true
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ export-installation-settings ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: upload-and-stage-datadog-cluster-monitoring
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      product: datadog-cluster-product
+      platform-automation-tasks: pcf-automation-tasks
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: configure-datadog-application-monitoring
+  serial: true
+  serial_groups: [ create-datadog-application-monitoring ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ upload-and-stage-datadog-application-monitoring ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: configure-metrics-store
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/configure-product.yml
+    input_mapping:
+      config: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+    params:
+      CONFIG_FILE: install-pcf/templates/((foundation))/datadog-application-monitoring.yml
+      VARS_FILES: |
+        vars/creds.yml
+        config/install-pcf/config/((foundation))/datadog-application-monitoring-var.yml
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: configure-metric-store
+  serial: true
+  serial_groups: [ create-store ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ upload-and-stage-metrics-store ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml 
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: configure-metrics-store
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/configure-product.yml
+    input_mapping:
+      config: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+    params:
+      CONFIG_FILE: install-pcf/templates/((foundation))/metric-store.yml
+      VARS_FILES: |
+        vars/creds.yml
+        config/install-pcf/config/((foundation))/metric-store-var.yml
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: configure-credhub-broker
+  serial: true
+  serial_groups: [ create-credhub ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ upload-and-stage-credhub ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: configure-credhub-broker
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/configure-product.yml
+    input_mapping:
+      config: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+    params:
+      CONFIG_FILE: install-pcf/templates/((foundation))/credhub-service-broker.yml
+      VARS_FILES: |
+        vars/creds.yml
+        config/install-pcf/config/((foundation))/credhub-service-broker-var.yml
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: configure-Metrics
+  serial: true
+  serial_groups: [ create-metrics ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ upload-and-stage-metrics ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: configure-Metrics
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/configure-product.yml
+    input_mapping:
+      config: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+    params:
+      CONFIG_FILE: install-pcf/templates/((foundation))/appMetrics.yml
+      VARS_FILES: |
+        vars/creds.yml
+        config/install-pcf/config/((foundation))/appMetrics-var.yml
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: configure-health-watch
+  serial: true
+  serial_groups: [ create-health-watch ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ upload-and-stage-health-watch ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml auth/auth.yml
+            cp env.yml env/env.yml
+            cat env/env.yml
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: configure-health-watch
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/configure-product.yml
+    input_mapping:
+      config: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+    params:
+      CONFIG_FILE: install-pcf/templates/((foundation))/p-healthwatch.yml
+      VARS_FILES: |
+        vars/creds.yml
+        config/install-pcf/config/((foundation))/p-healthwatch-var.yml
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+
+- name: configure-datadog-cluster-monitoring
+  serial: true
+  serial_groups: [ create-datadog-cluster-monitoring ]
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ upload-and-stage-datadog-cluster-monitoring ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml env/env.yml
+            cp env.yml auth/auth.yml
+            cat env/env.yml
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: configure-metrics-store
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/configure-product.yml
+    input_mapping:
+      config: pcf-automation-git
+      platform-automation-tasks: pcf-automation-tasks
+    params:
+      CONFIG_FILE: install-pcf/templates/((foundation))/datadog.yml
+      VARS_FILES: |
+        vars/creds.yml
+        config/install-pcf/config/((foundation))/datadog-var.yml
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
+
+- name: trigger-apply-changes
+  plan:
+  - aggregate:
+    - get: pcf-automation-tasks
+      params:
+        unpack: true
+        globs:
+        - platform-automation-tasks-*
+      resource: platform-automation
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: pcf-automation-template-git
+    - get: pipeline-utilities
+      passed: [ configure-health-watch ]
+  - task: create-env-file
+    params:
+      OPSMAN_TARGET: ((opsman-target))
+      OPSMAN_CONNECT_TIMEOUT: 1600
+      OPSMAN_REQUEST_TIMEOUT: 600
+      OPSMAN_SKIP_SSL_VALIDATION: true
+      OPSMAN_PASSWORD: ((opsman-password))
+      OPSMAN_USERNAME: ((opsman-username))
+      OPSMAN_DECRYPTION_PASSPHRASE: ((opsman-decryption-passphrase))
+    image: pcf-automation-image
+    config:
+      platform: linux
+      outputs:
+      - name: env
+      - name: auth
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            cat > env.yml <<EOL
+            ---
+            target: https://${OPSMAN_TARGET}
+            connect-timeout: 30            # default 5
+            request-timeout: 1800          # default 1800
+            skip-ssl-validation: true     # default false
+            username: ${OPSMAN_USERNAME}
+            password: ${OPSMAN_PASSWORD}
+            decryption-passphrase: passphrase
+            EOL
+            ls
+            cp env.yml auth/auth.yml
+            cp env.yml env/env.yml
+            cat env/env.yml
+  - task: credhub-interpolate
+    image: pcf-automation-image
+    file: pcf-automation-tasks/tasks/credhub-interpolate.yml
+    input_mapping:
+      files: pcf-automation-template-git
+      platform-automation-tasks: pcf-automation-tasks
+    output_mapping:
+      interpolated-files: vars
+    params:
+      # all required
+      CREDHUB_CA_CERT: ((credhub_ca_cert))
+      CREDHUB_CLIENT: ((credhub_client))
+      CREDHUB_SECRET: ((credhub_secret))
+      CREDHUB_SERVER: ((credhub_server))
+      PREFIX: /concourse/((foundation))
+  - task: check-opsman-status
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -eux
+            apt install jq -y
+            status="$(om --env env/"${ENV_FILE}" installations --format json | jq .[0].status)"
+            trimmed_status="$(xargs <<< "$status")"
+            if [ "$trimmed_status" == "running" ]; then
+              echo "\"Apply Changes\" is in flight." | tee /dev/stderr
+              exit 1
+            fi
+            echo "No \"Apply Changes\" in flight."
+  - task: apply-change-health-watch
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+      product_name: p-healthwatch
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" apply-changes --product-name ${product_name}
+  - task: apply-change-metric-store
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+      product_name: metric-store
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" apply-changes --product-name ${product_name}
+  - task: apply-change-credhub
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+      product_name: credhub-service-broker
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" apply-changes --product-name ${product_name}
+  - task: apply-change-app-metrics
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+      product_name: appMetrics
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" apply-changes --product-name ${product_name}
+  - task: apply-change-datadog-cluster-monitoring
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+      product_name: datadog
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" apply-changes --product-name ${product_name}
+  - task: apply-change-datadog-application-monitoring
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+      product_name: datadog-application-monitoring
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" apply-changes --product-name ${product_name}
+
+  - task: logout-of-opsmanger
+    image: pcf-automation-image
+    params:
+      ENV_FILE: env.yml
+    config:
+      platform: linux
+      inputs:
+      - name: env
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            set -ex
+            om --env env/"${ENV_FILE}" curl -x DELETE --path /api/v0/sessions
