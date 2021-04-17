@@ -1,0 +1,11 @@
+cf_api_uri: CHANGEME
+cf_user: CHANGEME
+cf_password: ((cf-admin-password))
+pivnet_token: ((pivnet_token))
+platform_automation_version: 4.4.3
+git_private_key: ((git_keys.private_key))
+git_uri: "CHANGEME"
+git_branch: "master"
+git_template_uri: "CHANGEME"
+git_template_branch: "master"
+foundation: "CHANGEME"
