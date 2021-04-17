@@ -1,0 +1,383 @@
+cf_api_params: &cf_api_params
+  CF_API_URI: {{cf_api_uri}}
+  CF_USERNAME: {{cf_user}}
+  CF_PASSWORD: {{cf_password}}
+
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+- name: platform-automation
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: platform-automation
+    product_version: ((platform_automation_version))
+    sort_by: semver
+
+- name: pcf-automation-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+
+- name: binary-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: binary-buildpack
+    product_version: \d+\.\d+\.\d+
+
+- name: dotnet-core-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: dotnet-core-buildpack
+    product_version: \d+\.\d+\.\d+
+
+- name: go-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: go-buildpack
+    product_version: \d+\.\d+\.\d+
+
+- name: java-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: java-buildpack
+    product_version: \d+\.\d+(\.\d+)?
+
+- name: nodejs-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: nodejs-buildpack
+    product_version: \d+\.\d+\.\d+
+
+- name: php-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: php-buildpack
+    product_version: \d+\.\d+\.\d+
+
+- name: python-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: python-buildpack
+    product_version: \d+\.\d+\.\d+
+
+- name: ruby-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: ruby-buildpack
+    product_version: \d+\.\d+\.\d+
+
+- name: staticfile-buildpack
+  type: pivnet
+  source:
+    api_token: {{pivnet_token}}
+    product_slug: staticfile-buildpack
+    product_version: \d+\.\d+\.\d+
+
+#- name: tc-buildpack
+#  type: pivnet
+#  source:
+#    api_token: {{pivnet_token}}
+#    product_slug: tc-server-buildpack
+#    product_version: \d+\.\d+(\.\d+)?
+
+- name: schedule
+  type: time
+  source:
+    interval: 30m
+    start: "12:00 AM"
+    stop: "11:59 PM"
+    location: America/Los_Angeles
+    days: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+
+jobs:
+- name: regulator
+  plan:
+  - aggregate:
+    - get: schedule
+      trigger: true
+    - get: binary-buildpack
+      params: { globs: [] }
+    - get: dotnet-core-buildpack
+      params: { globs: [] }
+    - get: go-buildpack
+      params: { globs: [] }
+    - get: java-buildpack
+      params: { globs: [] }
+    - get: nodejs-buildpack
+      params: { globs: [] }
+    - get: php-buildpack
+      params: { globs: [] }
+    - get: python-buildpack
+      params: { globs: [] }
+    - get: ruby-buildpack
+      params: { globs: [] }
+    - get: staticfile-buildpack
+      params: { globs: [] }
+#    - get: tc-buildpack
+#      params: { globs: [] }
+
+- name: stage-staticfile-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+    - get: buildpack
+      resource: staticfile-buildpack
+      trigger: true
+      passed: [regulator]
+    #- get: schedule
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: staticfile_buildpack_latest
+      AUX_BUILDPACK_NAME: staticfile_buildpack_auxiliary
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-ruby-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-staticfile-buildpack]
+    - get: buildpack
+      resource: ruby-buildpack
+      trigger: true
+      passed: [regulator]
+#    - get: schedule
+#      passed: [stage-staticfile-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: ruby_buildpack_latest
+      AUX_BUILDPACK_NAME: ruby_buildpack_auxiliary
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-python-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-ruby-buildpack]
+    - get: buildpack
+      resource: python-buildpack
+      trigger: true
+      passed: [regulator]
+#    - get: schedule
+#      passed: [stage-ruby-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: python_buildpack_latest
+      AUX_BUILDPACK_NAME: python_buildpack_auxiliary
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-binary-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-python-buildpack]
+    - get: buildpack
+      resource: binary-buildpack
+      trigger: true
+      passed: [regulator]
+    #- get: schedule
+    #  passed: [stage-python-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: binary_buildpack_latest
+      AUX_BUILDPACK_NAME: binary_buildpack_auxiliary
+      STACKS: "cflinuxfs3 windows windows2016 windows2012R2"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-php-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-binary-buildpack]
+    - get: buildpack
+      resource: php-buildpack
+      trigger: true
+      passed: [regulator]
+    #- get: schedule
+    #  passed: [stage-binary-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: php_buildpack_latest
+      AUX_BUILDPACK_NAME: php_buildpack_auxiliary
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-nodejs-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-php-buildpack]
+    - get: buildpack
+      resource: nodejs-buildpack
+      trigger: true
+      passed: [regulator]
+#    - get: schedule
+#      passed: [stage-php-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: nodejs_buildpack_latest
+      AUX_BUILDPACK_NAME: nodejs_buildpack_auxiliary
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-java-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-nodejs-buildpack]
+    - get: buildpack
+      resource: java-buildpack
+      trigger: true
+      passed: [regulator]
+#    - get: schedule
+#      passed: [stage-nodejs-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/java-add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: java_buildpack_offline_latest
+      AUX_BUILDPACK_NAME: java_buildpack_offline_auxiliary
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-go-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-java-buildpack]
+    - get: buildpack
+      resource: go-buildpack
+      trigger: true
+      passed: [regulator]
+#    - get: schedule
+#      passed: [stage-java-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: go_buildpack_latest
+      AUX_BUILDPACK_NAME: go_buildpack_auxiliary  
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
+
+- name: stage-dotnet-core-buildpack
+  serial_groups: [cc-api]
+  plan:
+  - aggregate:
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation
+    - get: pcf-automation-git
+#      passed: [stage-go-buildpack]
+    - get: buildpack
+      resource: dotnet-core-buildpack
+      trigger: true
+      passed: [regulator]
+#    - get: schedule
+#      passed: [stage-go-buildpack]
+  - task: stage
+    file: pcf-automation-git/update-buildpacks/tasks/add-buildpack.yml
+    image: pcf-automation-image
+    params:
+      <<: *cf_api_params
+      BUILDPACK_NAME: dotnet_core_buildpack_latest
+      AUX_BUILDPACK_NAME: dotnet_core_buildpack_auxiliary
+      STACKS: "cflinuxfs3"
+      BUILDPACKSTORETAIN: 2
