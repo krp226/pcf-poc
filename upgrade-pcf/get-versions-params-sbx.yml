@@ -1,0 +1,17 @@
+skip-ssl-validation: true
+foundation: "sandbox"
+# Github Credentials
+git_private_key: ((git_keys.private_key))
+git_uri: ""
+git_branch: "master"
+# pcf-wiki
+wiki_git_uri:
+wiki_git_branch: ""
+# For pivnet resources
+pivnet-api-token: ((pivnet_token))
+platform_automation_version: 4.4.3
+#Ops Manager Information
+opsman_target: 
+opsman_username: ((opsman-username))
+opsman_password: ((opsman-password))
+trigger_interval: 30m
