@@ -1,0 +1,168 @@
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+- name: schedule
+  type: time
+  source:
+    interval: {{trigger_interval}}
+    start: "02:00 AM"
+    stop: "05:00 PM"
+    location: America/Chicago
+
+- name: pcf-automation-git
+  type: git
+  source:
+    private_key: ((git_private_key))
+    uri: ((git_uri))
+    branch: ((git_branch))
+
+- name: platform-automation-pivnet
+  type: pivnet
+  source:
+    api_token: ((pivnet_token))
+    product_slug: platform-automation
+    product_version: ((platform_automation_version))
+    sort_by: semver
+
+jobs:
+- name: check-versions
+  serial: true
+  plan:
+  - aggregate:
+    - get: schedule
+      trigger: true
+    - get: pcf-automation-image
+      params:
+        unpack: true
+        globs:
+        - platform-automation-image-*
+      resource: platform-automation-pivnet
+    - get: pcf-automation-git
+  - task: check-tile-versions
+    image: pcf-automation-image
+    file: pcf-automation-git/upgrade-pipelines/tasks/get-versions/task.yml
+    input_mapping:
+      code-repo: pcf-automation-git
+    params:
+      SKIP_SSL_VALIDATION: true
+      OPSMAN_URL: ((opsman_target))
+      OPSMAN_USERNAME: ((opsman_username))
+      OPSMAN_PASSWORD: ((opsman_password))
+      PIVNET_API_TOKEN: ((pivnet_token))
+     #ZSCALER_CERT: ((zscaler.certificate))
+#    ensure: &make-state-commit
+#      do:
+#        - task: make-commit
+#          image: pcf-automation-image
+#          input_mapping:
+#            configuration: pcf-automation-git
+#            generated-versions: generated-versions
+#          config:
+#            platform: linux
+#            inputs:
+#              - name: generated-versions 
+#              - name: configuration 
+#            outputs:
+#              - name: configuration-commit
+#            run:
+#              path: bash
+#              args:
+#                - -c
+#                - |
+#                  set -eux
+#                  git clone -b ((git_branch)) configuration configuration-commit
+#                  cp generated-versions/current_versions.txt configuration-commit/state/((foundation))/current_versions.txt
+#                  cd configuration-commit
+#                  git add -A
+#                  git config --global user.email "bot@example.com"
+#                  git config --global user.name "Friendly Neighborhood Bot"
+#                  git commit -m 'updated the state file' || true
+#        - put: pcf-automation-git
+#          params:
+#            repository: configuration-commit
+#            rebase: true
+  
+#  - task: generate-html-output
+#    image: pcf-automation-image
+#    file: code-repo/bbr/custom-tasks/versions/html-task.yml
+#    input_mapping:
+#      generated-html: generated-versions
+#    ensure: &make-state-commit
+#      do:
+#        - task: make-commit
+#          image: pcf-automation-image
+#          input_mapping:
+#            configuration: pcf-automation-git
+#            generated-html: generated-html
+#          config:
+#            platform: linux
+#            inputs:
+#              - name: generated-html
+#              - name: configuration
+#            outputs:
+#              - name: configuration-commit
+#            run:
+#              path: bash
+#              args:
+#                - -c
+#                - |
+#                  set -eux
+#                  git clone -b ((git_branch)) configuration configuration-commit
+#                  cp generated-html/current_versions.html configuration-commit/state/((foundation))/current_versions.html
+#                  cd configuration-commit
+#                  git add -A
+#                  git config --global user.email "bot@example.com"
+#                  git config --global user.name "Friendly Neighborhood Bot"
+#                  git commit -m 'updated the state file' || true
+#        - put: pcf-automation-git
+#          params:
+#            repository: configuration-commit
+#            rebase: true
+
+  - task: Check-certs
+    image: pcf-automation-image
+    file: pcf-automation-git/upgrade-pipelines/tasks/get-versions/certs-task.yml
+    input_mapping:
+      code-repo: pcf-automation-git
+      generated-html: generated-versions
+    params:
+      OPSMAN_URL: ((opsman_target))
+      OPSMAN_USERNAME: ((opsman_username))
+      OPSMAN_PASSWORD: ((opsman_password))
+      #ZSCALER_CERT: ((zscaler.certificate))
+#    ensure: &make-state-commit
+#      do:
+#        - task: make-commit
+#          image: pcf-automation-image
+#          input_mapping:
+#            configuration: pcf-automation-git
+#            generated-html: generated-html
+#          config:
+#            platform: linux
+#            inputs:
+#              - name: generated-html
+#              - name: configuration
+#            outputs:
+#              - name: configuration-commit
+#            run:
+#              path: bash
+#              args:
+#                - -c
+#                - |
+#                  set -eux
+#                  git clone -b ((git_branch)) configuration configuration-commit
+#                  cp generated-html/certs_expiry.html configuration-commit/configuration-commit/state/((foundation))/certs-expiry-((foundation)).html
+#                  cd configuration-commit
+#                  git add -A
+#                  git config --global user.email "bot@example.com"
+#                  git config --global user.name "Friendly Neighborhood Bot"
+#                  git commit -m 'updated the state file' || true
+#        - put: pcf-automation-git
+#          params:
+#            repository: configuration-commit
+#            rebase: true
