@@ -15,3 +15,6 @@ opsman_target:
 opsman_username: ((opsman-username))
 opsman_password: ((opsman-password))
 trigger_interval: 30m
+
+endpoint: 
+cf_pwd: ((cf-admin-key))
