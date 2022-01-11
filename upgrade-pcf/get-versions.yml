@@ -17,9 +17,10 @@ resources:
 - name: pcf-automation-git
   type: git
   source:
-    private_key: ((git_private_key))
     uri: ((git_uri))
     branch: ((git_branch))
+    username: ((git_username))
+    password: ((git_pwd))
 
 - name: platform-automation-pivnet
   type: pivnet
@@ -28,21 +29,22 @@ resources:
     product_slug: platform-automation
     product_version: ((platform_automation_version))
     sort_by: semver
+  check_every: never
 
 jobs:
 - name: check-versions
   serial: true
+  public: true
   plan:
-  - aggregate:
-    - get: schedule
-      trigger: true
-    - get: pcf-automation-image
-      params:
-        unpack: true
-        globs:
-        - platform-automation-image-*
-      resource: platform-automation-pivnet
-    - get: pcf-automation-git
+  - get: schedule
+    trigger: true
+  - get: pcf-automation-image
+    params:
+      unpack: true
+      globs:
+      - platform-automation-image-*
+    resource: platform-automation-pivnet
+  - get: pcf-automation-git
   - task: check-tile-versions
     image: pcf-automation-image
     file: pcf-automation-git/upgrade-pipelines/tasks/get-versions/task.yml
@@ -54,7 +56,11 @@ jobs:
       OPSMAN_USERNAME: ((opsman_username))
       OPSMAN_PASSWORD: ((opsman_password))
       PIVNET_API_TOKEN: ((pivnet_token))
-     #ZSCALER_CERT: ((zscaler.certificate))
+      Endpoint: ((endpoint))
+      USERNAME: admin
+      PASSWORD: ((cf_pwd))
+      ORG: system
+      SPACE: system
 #    ensure: &make-state-commit
 #      do:
 #        - task: make-commit
@@ -65,8 +71,8 @@ jobs:
 #          config:
 #            platform: linux
 #            inputs:
-#              - name: generated-versions 
-#              - name: configuration 
+#              - name: generated-versions
+#              - name: configuration
 #            outputs:
 #              - name: configuration-commit
 #            run:
@@ -86,7 +92,7 @@ jobs:
 #          params:
 #            repository: configuration-commit
 #            rebase: true
-  
+
 #  - task: generate-html-output
 #    image: pcf-automation-image
 #    file: code-repo/bbr/custom-tasks/versions/html-task.yml
@@ -124,16 +130,16 @@ jobs:
 #            repository: configuration-commit
 #            rebase: true
 
-  - task: Check-certs
-    image: pcf-automation-image
-    file: pcf-automation-git/upgrade-pipelines/tasks/get-versions/certs-task.yml
-    input_mapping:
-      code-repo: pcf-automation-git
-      generated-html: generated-versions
-    params:
-      OPSMAN_URL: ((opsman_target))
-      OPSMAN_USERNAME: ((opsman_username))
-      OPSMAN_PASSWORD: ((opsman_password))
+#  - task: Check-certs
+#    image: pcf-automation-image
+#    file: pcf-automation-git/upgrade-pipelines/tasks/get-versions/certs-task.yml
+#    input_mapping:
+#      code-repo: pcf-automation-git
+#      generated-html: generated-versions
+#    params:
+#      OPSMAN_URL: ((opsman_target))
+#      OPSMAN_USERNAME: ((opsman_username))
+#      OPSMAN_PASSWORD: ((opsman_password))
       #ZSCALER_CERT: ((zscaler.certificate))
 #    ensure: &make-state-commit
 #      do:
