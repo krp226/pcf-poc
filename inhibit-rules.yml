@@ -1,0 +1,112 @@
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: VMsHealth
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASVMCPU
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASVMMemory
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASVMPersistantDisk
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASVMEphermeralDisk
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: BOSHDirectorStatus
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TanzuSLOCFPushErrorBudget
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TanzuSLOCFPushAvailability
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TanzuSLOCanaryAppAvailability
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TanzuSLOCanaryAppErrorBudget
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASCLICommandStatus
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASDiegoMemoryUsedPercentage
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASDiegoMemoryLeft
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASDiegoDiskUsed
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASMySQLHealth
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASRouterHealth
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASRouterCPUUtilization
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASRouterFileDescriptors
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASUAAHealth
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: TASUsageService
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: HealthwatchTASSLOs
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: HealthwatchTASCounterExporter
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: HealthwatchTASGaugeExporter
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: HealthwatchTASTimerExporter
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: MySQLSingleNodeAndMultiSiteClusterHealth
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: MySQLLeaderFollowerClusterHealth
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: MySQLHighAvailabilityClusterHealth
+- source_match:
+    alertname: BackupHours
+  target_match:
+    alertname: RabbitMQClusterHealth
