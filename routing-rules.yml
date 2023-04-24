@@ -1,0 +1,5 @@
+receiver: 'email-receiver'
+group_wait: 30s
+group_interval: 5m
+repeat_interval: 4h
+group_by: [cluster, alertname]
