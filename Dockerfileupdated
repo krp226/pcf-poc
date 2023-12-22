@@ -34,7 +34,7 @@ RUN addgroup -gid 1000 piper && \
     curl --location --silent "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v6&source=github" | tar -zx -C /usr/local/bin && \
     cf --version
 
-RUN |1 USER_HOME=/home/piper /bin/sh -c wget https://github.com/ArnaLabs/C9Cli/releases/download/v4.5.5/C9Cli-v4.5.5-linux-amd64.tar.gz -O -| tar -xz -C /bin # buildkit
+RUN wget https://github.com/ArnaLabs/C9Cli/releases/download/v4.5.5/C9Cli-v4.5.5-linux-amd64.tar.gz -O -| tar -xz -C /bin # buildkit
 
 RUN echo 'C9Cli version has been moved to non-beta version 4.5.5 to support both V2/V3 integration'
 
