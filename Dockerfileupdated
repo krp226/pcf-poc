@@ -1,0 +1,46 @@
+FROM ubuntu:xenial
+
+#ENV CF_CLI_VERSION "6.44.0"
+
+RUN apt-get update && apt-get install -y \
+  openssh-client \
+  ca-certificates \
+  mysql-client \
+  awscli \
+  vim \
+  curl \
+  wget \
+  jq \
+  netcat-openbsd \
+  && rm -rf /var/lib/apt/lists/*
+
+
+RUN ["/bin/bash", "-c", "set -o pipefail && curl -s https://api.github.com/repos/pivotal-cf/om/releases/latest \
+     | jq -e -r '.assets[] | select(.name | contains(\"om-linux\")) | select(.name | contains(\"tar.gz\") | not) | .browser_download_url' \
+     | wget -qi - -O /bin/om && chmod +x /bin/om"]
+
+RUN ["/bin/bash", "-c", "set -o pipefail && curl -s https://api.github.com/repos/cloudfoundry/bosh-cli/releases/latest \
+    | jq -e -r '.assets[] | .browser_download_url' \
+    | grep linux \
+    | wget -qi - -O /bin/bosh && chmod +x /bin/bosh"]
+
+RUN ["/bin/bash", "-c", "set -o pipefail && curl -s https://api.github.com/repos/concourse/concourse/releases/latest \
+    | jq -e -r '.assets[] | select(.name | contains(\"linux-amd64.tgz\")) | select(.name | contains(\"fly\")) | select(.name | contains(\"sha\") | not) | .browser_download_url' \
+    | wget -qi - -O fly.tar.gz && tar xvf fly.tar.gz -C /bin && rm fly.tar.gz && chmod +x /bin/fly"]
+
+ARG USER_HOME=/home/piper
+RUN addgroup -gid 1000 piper && \
+    useradd piper --uid 1000 --gid 1000 --shell /bin/bash --home-dir "${USER_HOME}" --create-home && \
+    curl --location --silent "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v6&source=github" | tar -zx -C /usr/local/bin && \
+    cf --version
+
+RUN |1 USER_HOME=/home/piper /bin/sh -c wget https://github.com/ArnaLabs/C9Cli/releases/download/v4.5.5/C9Cli-v4.5.5-linux-amd64.tar.gz -O -| tar -xz -C /bin # buildkit
+
+RUN echo 'C9Cli version has been moved to non-beta version 4.5.5 to support both V2/V3 integration'
+
+#RUN set -e; \
+#    curl -L "https://cli.run.pivotal.io/stable?release=linux64-binary&version=${CF_CLI_VERSION}" | tar -zx -C /usr/local/bin;
+
+#RUN ["/bin/bash", "-c", "set -o pipefail && curl -s 'https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github&version=v6' \
+#     | jq -e -r '.assets[] | select(.name | contains(\"*.tgz\")) | select(.name | contains(\"cf\") | not) | .browser_download_url' \
+#     | wget -qi - -O cf.tar.gz && tar xvf cf.tar.gz -c /bin/cf && chmod +x /bin/cf"]
